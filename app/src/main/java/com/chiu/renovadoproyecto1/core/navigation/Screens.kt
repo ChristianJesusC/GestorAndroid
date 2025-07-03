@@ -7,3 +7,6 @@ object Login
 
 @Serializable
 object Juegos
+
+@Serializable
+object Register

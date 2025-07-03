@@ -2,6 +2,7 @@
 
 package com.chiu.renovadoproyecto1.features.juegos.di
 
+import android.content.Context
 import com.chiu.renovadoproyecto1.core.http.RetrofitHelper
 import com.chiu.renovadoproyecto1.features.juegos.data.datasource.remote.JuegosService
 import com.chiu.renovadoproyecto1.features.juegos.data.repository.JuegosRepositoryImpl
@@ -14,40 +15,37 @@ import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.JuegosV
 import com.chiu.renovadoproyecto1.features.login.di.AppModule
 
 object JuegosModule {
-    // Services
+
     private val juegosService: JuegosService by lazy {
         RetrofitHelper.getService(JuegosService::class.java)
     }
 
-    // Repositories
-    private val juegosRepository: JuegosRepository by lazy {
-        JuegosRepositoryImpl(juegosService)
+    private fun getJuegosRepository(context: Context): JuegosRepository {
+        return JuegosRepositoryImpl(juegosService, context)
     }
 
-    // Use Cases
-    private val getJuegosUseCase: GetJuegosUseCase by lazy {
-        GetJuegosUseCase(juegosRepository, AppModule.getTokenRepository)
+    fun getGetJuegosUseCase(context: Context): GetJuegosUseCase {
+        return GetJuegosUseCase(getJuegosRepository(context), AppModule.getTokenRepository)
     }
 
-    private val createJuegoUseCase: CreateJuegoUseCase by lazy {
-        CreateJuegoUseCase(juegosRepository, AppModule.getTokenRepository)
+    fun getCreateJuegoUseCase(context: Context): CreateJuegoUseCase {
+        return CreateJuegoUseCase(getJuegosRepository(context), AppModule.getTokenRepository)
     }
 
-    private val updateJuegoUseCase: UpdateJuegoUseCase by lazy {
-        UpdateJuegoUseCase(juegosRepository, AppModule.getTokenRepository)
+    fun getUpdateJuegoUseCase(context: Context): UpdateJuegoUseCase {
+        return UpdateJuegoUseCase(getJuegosRepository(context), AppModule.getTokenRepository)
     }
 
-    private val deleteJuegoUseCase: DeleteJuegoUseCase by lazy {
-        DeleteJuegoUseCase(juegosRepository, AppModule.getTokenRepository)
+    fun getDeleteJuegoUseCase(context: Context): DeleteJuegoUseCase {
+        return DeleteJuegoUseCase(getJuegosRepository(context), AppModule.getTokenRepository)
     }
 
-    // ViewModel Factory
-    val juegosViewModelFactory: JuegosViewModelFactory by lazy {
-        JuegosViewModelFactory(
-            getJuegosUseCase,
-            createJuegoUseCase,
-            updateJuegoUseCase,
-            deleteJuegoUseCase,
+    fun getJuegosViewModelFactory(context: Context): JuegosViewModelFactory {
+        return JuegosViewModelFactory(
+            getGetJuegosUseCase(context),
+            getCreateJuegoUseCase(context),
+            getUpdateJuegoUseCase(context),
+            getDeleteJuegoUseCase(context),
             AppModule.getTokenRepository
         )
     }

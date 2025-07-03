@@ -1,33 +1,54 @@
 package com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
+import com.chiu.renovadoproyecto1.features.juegos.presentation.components.ImageCameraPicker
+
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
 
 @Composable
 fun CreateJuegoDialog(
     onDismiss: () -> Unit,
     onConfirm: (Juego) -> Unit
 ) {
+    val context = LocalContext.current
+    val activity = remember(context) {
+        context.findActivity() as? FragmentActivity
+    }
+
     var nombre by remember { mutableStateOf("") }
     var compania by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var cantidad by remember { mutableStateOf("") }
+    var logo by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
-            Text(
-                text = "🎮",
-                style = MaterialTheme.typography.displayMedium
-            )
+            Text("🎮", style = MaterialTheme.typography.displayMedium)
         },
         title = {
             Text(
@@ -39,9 +60,18 @@ fun CreateJuegoDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                ImageCameraPicker(
+                    selectedImage = logo,
+                    onImageSelected = { selectedLogo -> logo = selectedLogo },
+                    placeholder = "Logo del juego",
+                    activity = activity // ← Pasar la activity encontrada
+                )
+
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
@@ -82,20 +112,33 @@ fun CreateJuegoDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val cantidadInt = cantidad.toIntOrNull() ?: 0
-                    val nuevoJuego = Juego(
-                        nombre = nombre.trim(),
-                        compania = compania.trim(),
-                        descripcion = descripcion.trim(),
-                        cantidad = cantidadInt
-                    )
-                    onConfirm(nuevoJuego)
+                    try {
+                        val cantidadInt = cantidad.toIntOrNull() ?: 0
+                        if (nombre.isBlank()) {
+                            return@Button
+                        }
+                        if (logo.isNullOrBlank()) {
+                            return@Button
+                        }
+
+                        val nuevoJuego = Juego(
+                            nombre = nombre.trim(),
+                            compania = compania.trim(),
+                            descripcion = descripcion.trim(),
+                            cantidad = cantidadInt,
+                            logo = logo
+                        )
+                        onConfirm(nuevoJuego)
+                    } catch (e: Exception) {
+                        Log.e("CreateJuegoDialog", "Error creando juego: ${e.message}")
+                    }
                 },
                 enabled = nombre.isNotBlank() &&
                         compania.isNotBlank() &&
                         descripcion.isNotBlank() &&
                         cantidad.toIntOrNull() != null &&
-                        cantidad.toIntOrNull()!! > 0,
+                        cantidad.toIntOrNull()!! > 0 &&
+                        !logo.isNullOrBlank(),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text("✨ Crear", fontWeight = FontWeight.Bold)
@@ -119,18 +162,21 @@ fun EditJuegoDialog(
     onDismiss: () -> Unit,
     onConfirm: (Juego) -> Unit
 ) {
+    val context = LocalContext.current
+    val activity = remember(context) {
+        context.findActivity() as? FragmentActivity
+    }
+
     var nombre by remember { mutableStateOf(juego.nombre ?: "") }
     var compania by remember { mutableStateOf(juego.compania ?: "") }
     var descripcion by remember { mutableStateOf(juego.descripcion ?: "") }
     var cantidad by remember { mutableStateOf((juego.cantidad ?: 0).toString()) }
+    var logo by remember { mutableStateOf(juego.logo) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
-            Text(
-                text = "✏️",
-                style = MaterialTheme.typography.displayMedium
-            )
+            Text("✏️", style = MaterialTheme.typography.displayMedium)
         },
         title = {
             Text(
@@ -142,9 +188,18 @@ fun EditJuegoDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                ImageCameraPicker(
+                    selectedImage = logo,
+                    onImageSelected = { selectedLogo -> logo = selectedLogo },
+                    placeholder = "Logo del juego",
+                    activity = activity // ← Pasar la activity encontrada
+                )
+
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
@@ -190,7 +245,8 @@ fun EditJuegoDialog(
                         nombre = nombre.trim(),
                         compania = compania.trim(),
                         descripcion = descripcion.trim(),
-                        cantidad = cantidadInt
+                        cantidad = cantidadInt,
+                        logo = logo
                     )
                     onConfirm(juegoEditado)
                 },
@@ -225,10 +281,7 @@ fun DeleteJuegoDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
-            Text(
-                text = "⚠️",
-                style = MaterialTheme.typography.displayMedium
-            )
+            Text("⚠️", style = MaterialTheme.typography.displayMedium)
         },
         title = {
             Text(

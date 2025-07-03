@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.play.services.cast.framework)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -80,5 +81,10 @@ dependencies {
 
     implementation("androidx.compose.ui:ui-graphics:1.7.5")
 
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    implementation("io.coil-kt:coil-gif:2.5.0")
+
+    implementation("androidx.biometric:biometric:1.1.0")
 
 }

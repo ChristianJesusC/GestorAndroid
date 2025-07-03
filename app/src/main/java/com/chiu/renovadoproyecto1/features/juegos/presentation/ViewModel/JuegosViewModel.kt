@@ -84,29 +84,26 @@ class JuegosViewModel(
 
     fun createJuego(juego: Juego) {
         viewModelScope.launch {
-            val isValid = checkTokenValid()
-            if (!isValid) return@launch
+            try {
+                _state.value = JuegosState.Loading
+                Log.d("JuegosViewModel", "Creando juego: ${juego.nombre}")
 
-            _state.value = JuegosState.Loading
-
-            createJuegoUseCase(juego).fold(
-                onSuccess = { juegoCreado ->
-                    _state.value = JuegosState.ActionSuccess("Juego creado exitosamente")
-                    Log.d("JuegosViewModel", "Juego creado: ${juegoCreado.nombre}")
-                    loadJuegos()
-                },
-                onFailure = { exception ->
-                    Log.e("JuegosViewModel", "Error creando juego: ${exception.message}")
-                    if (isAuthError(exception)) {
-                        logout()
-                    } else {
-                        _state.value = JuegosState.Error(exception.message ?: "Error desconocido")
+                createJuegoUseCase(juego).fold(
+                    onSuccess = {
+                        Log.d("JuegosViewModel", "✅ Juego creado exitosamente")
+                        loadJuegos() // Recargar lista
+                    },
+                    onFailure = { error ->
+                        Log.e("JuegosViewModel", "❌ Error: ${error.message}")
+                        _state.value = JuegosState.Error(error.message ?: "Error desconocido")
                     }
-                }
-            )
+                )
+            } catch (e: Exception) {
+                Log.e("JuegosViewModel", "❌ Excepción: ${e.message}", e)
+                _state.value = JuegosState.Error("Error inesperado: ${e.message}")
+            }
         }
     }
-
     fun updateJuego(juego: Juego) {
         viewModelScope.launch {
             val isValid = checkTokenValid()

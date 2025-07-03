@@ -1,10 +1,16 @@
-package com.chiu.renovadoproyecto1.features.login.presentation
+package com.chiu.renovadoproyecto1.features.register.presentation.View
 
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,27 +20,32 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.chiu.renovadoproyecto1.features.register.presentation.ViewModel.RegisterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    viewModel: LoginViewModel,
-    onNavigateToJuegos: () -> Unit = {},
-    onNavigateToRegister: () -> Unit = {}
+fun RegisterScreen(
+    viewModel: RegisterViewModel,
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var showConfirmPassword by remember { mutableStateOf(false) }
 
-    LaunchedEffect(uiState.shouldNavigateToJuegos) {
-        if (uiState.shouldNavigateToJuegos) {
+    LaunchedEffect(uiState.shouldNavigateToLogin) {
+        if (uiState.shouldNavigateToLogin) {
             uiState.message?.let { message ->
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }
-            onNavigateToJuegos()
+            onNavigateToLogin()
             viewModel.clearNavigationFlag()
         }
     }
@@ -45,46 +56,6 @@ fun LoginScreen(
         }
     }
 
-    if (uiState.isCheckingAuth) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
-        ) {
-            Card(
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(48.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    Text(
-                        text = "🎮",
-                        style = MaterialTheme.typography.displayLarge
-                    )
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(56.dp),
-                        strokeWidth = 6.dp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Verificando sesión...",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
-        return
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -93,6 +64,7 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -110,7 +82,25 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    // Logo y título
+                    // Header con botón de regreso
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = onNavigateBack
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -119,11 +109,11 @@ fun LoginScreen(
                             modifier = Modifier
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                .background(MaterialTheme.colorScheme.secondaryContainer),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "🎮",
+                                text = "👤",
                                 style = MaterialTheme.typography.displayMedium
                             )
                         }
@@ -132,13 +122,13 @@ fun LoginScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "GameStore",
+                                text = "Crear Cuenta",
                                 style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Gestión de Videojuegos",
+                                text = "Únete a GameStore",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -151,7 +141,6 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                     )
 
-                    // Campos de texto
                     Column(
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
@@ -159,41 +148,88 @@ fun LoginScreen(
                             value = username,
                             onValueChange = { username = it },
                             label = { Text("Nombre de usuario") },
-                            placeholder = { Text("Ingresa tu usuario") },
+                            placeholder = { Text("Mínimo 3 caracteres") },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !uiState.isLoading,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            supportingText = {
+                                Text("El usuario debe tener al menos 3 caracteres")
+                            }
                         )
 
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
                             label = { Text("Contraseña") },
-                            placeholder = { Text("Ingresa tu contraseña") },
-                            visualTransformation = PasswordVisualTransformation(),
+                            placeholder = { Text("Mínimo 6 caracteres") },
+                            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !uiState.isLoading,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { showPassword = !showPassword }) {
+                                    Icon(
+                                        imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
+                                    )
+                                }
+                            },
+                            supportingText = {
+                                Text("Debe contener mayúscula, minúscula y número")
+                            }
+                        )
+
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = { Text("Confirmar contraseña") },
+                            placeholder = { Text("Repite tu contraseña") },
+                            visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !uiState.isLoading,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
+                                    Icon(
+                                        imageVector = if (showConfirmPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = if (showConfirmPassword) "Ocultar contraseña" else "Mostrar contraseña"
+                                    )
+                                }
+                            },
+                            isError = confirmPassword.isNotEmpty() && password != confirmPassword,
+                            supportingText = {
+                                if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                                    Text(
+                                        "Las contraseñas no coinciden",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
                         )
                     }
 
-                    // Botones
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Button(
                             onClick = {
                                 viewModel.clearError()
-                                viewModel.login(username, password)
+                                viewModel.register(username, password, confirmPassword)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
-                            enabled = !uiState.isLoading && username.isNotBlank() && password.isNotBlank(),
+                            enabled = !uiState.isLoading &&
+                                    username.isNotBlank() &&
+                                    password.isNotBlank() &&
+                                    confirmPassword.isNotBlank() &&
+                                    password == confirmPassword,
                             shape = RoundedCornerShape(16.dp),
                             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
                         ) {
@@ -209,14 +245,14 @@ fun LoginScreen(
                                     )
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Text(
-                                        "Iniciando sesión...",
+                                        "Creando cuenta...",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 }
                             } else {
                                 Text(
-                                    "Iniciar Sesión",
+                                    "Crear Cuenta",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -224,14 +260,14 @@ fun LoginScreen(
                         }
 
                         OutlinedButton(
-                            onClick = onNavigateToRegister,
+                            onClick = onNavigateToLogin,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(
-                                "Regístrate",
+                                "¿Ya tienes cuenta? Inicia sesión",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium
                             )
@@ -241,7 +277,6 @@ fun LoginScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-
         }
     }
 }

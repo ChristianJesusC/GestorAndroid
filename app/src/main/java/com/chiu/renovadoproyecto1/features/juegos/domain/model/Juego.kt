@@ -5,5 +5,6 @@ data class Juego(
     val nombre: String? = null,
     val compania: String? = null,
     val descripcion: String? = null,
-    val cantidad: Int? = null
+    val cantidad: Int? = null,
+    val logo: String? = null
 )
