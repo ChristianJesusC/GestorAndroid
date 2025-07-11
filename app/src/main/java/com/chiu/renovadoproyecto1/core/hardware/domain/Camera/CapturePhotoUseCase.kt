@@ -17,7 +17,7 @@ class CapturePhotoUseCase(
     }
 
     fun capturePhoto(
-        onSuccess: (String) -> Unit, // Retorna Base64
+        onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
         if (!cameraManager.isAvailable()) {

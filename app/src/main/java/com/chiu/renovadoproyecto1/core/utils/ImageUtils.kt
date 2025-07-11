@@ -23,7 +23,6 @@ object ImageUtils {
                     val requestBody = imageBytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
                     MultipartBody.Part.createFormData("logo", "camera_image.jpg", requestBody)
                 }
-                // Si es URI (desde galería)
                 imageData.startsWith("content://") -> {
                     Log.d("ImageUtils", "Procesando imagen desde galería")
                     val uri = Uri.parse(imageData)

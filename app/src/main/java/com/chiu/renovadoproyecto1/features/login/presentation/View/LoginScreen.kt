@@ -472,7 +472,7 @@ fun LoginScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
-                            enabled = uiState.biometricAuthCompleted, // ← AGREGAR VALIDACIÓN
+                            enabled = uiState.biometricAuthCompleted,
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(

@@ -25,11 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chiu.renovadoproyecto1.features.juegos.di.JuegosModule
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
-import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog.CreateJuegoDialog
-import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog.DeleteJuegoDialog
-import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog.EditJuegoDialog
-import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.JuegosState
-import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.JuegosViewModel
+import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog.*
+import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Content.*
 
 

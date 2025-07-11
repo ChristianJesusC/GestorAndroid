@@ -9,14 +9,12 @@ class GetJuegosUseCase (
     private val tokenRepository: TokenRepository
 ) {
     suspend operator fun invoke(): Result<List<Juego>> {
-        // Verificar si hay token válido
         if (!tokenRepository.hasToken()) {
             return Result.failure(Exception("No hay token de autenticación"))
         }
 
         val result = juegosRepository.getJuegos()
 
-        // Si el token expiró (401), limpiar token
         result.onFailure { exception ->
             if (exception.message?.contains("401") == true) {
                 tokenRepository.clearToken()

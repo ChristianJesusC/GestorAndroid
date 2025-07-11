@@ -3,6 +3,7 @@ package com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chiu.renovadoproyecto1.core.hardware.domain.Camera.CapturePhotoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.CreateJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.DeleteJuegoUseCase
@@ -19,7 +20,8 @@ class JuegosViewModel(
     private val createJuegoUseCase: CreateJuegoUseCase,
     private val updateJuegoUseCase: UpdateJuegoUseCase,
     private val deleteJuegoUseCase: DeleteJuegoUseCase,
-    private val tokenRepository: TokenRepository
+    private val tokenRepository: TokenRepository,
+    private val capturePhotoUseCase: CapturePhotoUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<JuegosState>(JuegosState.Loading)
@@ -28,8 +30,45 @@ class JuegosViewModel(
     private val _authState = MutableStateFlow(true)
     val authState: StateFlow<Boolean> = _authState.asStateFlow()
 
+    private val _cameraState = MutableStateFlow<CameraState>(CameraState.Idle)
+    val cameraState: StateFlow<CameraState> = _cameraState.asStateFlow()
+
     init {
         checkAuthAndLoadJuegos()
+    }
+
+    fun isCameraAvailable(): Boolean = capturePhotoUseCase.isAvailable()
+
+    fun hasCameraPermission(): Boolean = capturePhotoUseCase.hasPermission()
+
+    fun requestCameraPermission() {
+        _cameraState.value = CameraState.RequestingPermission
+        capturePhotoUseCase.requestPermission { granted ->
+            _cameraState.value = if (granted) {
+                CameraState.PermissionGranted
+            } else {
+                CameraState.PermissionDenied("Permisos de cámara denegados")
+            }
+        }
+    }
+
+    fun capturePhoto() {
+        _cameraState.value = CameraState.Capturing
+        capturePhotoUseCase.capturePhoto(
+            onSuccess = { base64Image ->
+                val fullBase64 = "data:image/jpeg;base64,$base64Image"
+                _cameraState.value = CameraState.PhotoCaptured(fullBase64)
+                Log.d("JuegosViewModel", "Foto capturada exitosamente")
+            },
+            onError = { error ->
+                _cameraState.value = CameraState.Error(error)
+                Log.e("JuegosViewModel", "Error capturando foto: $error")
+            }
+        )
+    }
+
+    fun resetCameraState() {
+        _cameraState.value = CameraState.Idle
     }
 
     private fun checkAuthAndLoadJuegos() {
@@ -91,7 +130,7 @@ class JuegosViewModel(
                 createJuegoUseCase(juego).fold(
                     onSuccess = {
                         Log.d("JuegosViewModel", "✅ Juego creado exitosamente")
-                        loadJuegos() // Recargar lista
+                        loadJuegos()
                     },
                     onFailure = { error ->
                         Log.e("JuegosViewModel", "❌ Error: ${error.message}")
@@ -104,6 +143,7 @@ class JuegosViewModel(
             }
         }
     }
+
     fun updateJuego(juego: Juego) {
         viewModelScope.launch {
             val isValid = checkTokenValid()
@@ -177,4 +217,14 @@ sealed class JuegosState {
     data class Success(val juegos: List<Juego>) : JuegosState()
     data class Error(val error: String) : JuegosState()
     data class ActionSuccess(val message: String) : JuegosState()
+}
+
+sealed class CameraState {
+    object Idle : CameraState()
+    object RequestingPermission : CameraState()
+    object PermissionGranted : CameraState()
+    data class PermissionDenied(val message: String) : CameraState()
+    object Capturing : CameraState()
+    data class PhotoCaptured(val base64Image: String) : CameraState()
+    data class Error(val message: String) : CameraState()
 }

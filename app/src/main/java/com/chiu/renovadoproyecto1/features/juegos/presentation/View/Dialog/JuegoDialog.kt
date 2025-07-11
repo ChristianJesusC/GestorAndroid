@@ -1,8 +1,5 @@
 package com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,33 +9,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.FragmentActivity
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
-import com.chiu.renovadoproyecto1.features.juegos.presentation.components.ImageCameraPicker
-
-fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) return context
-        context = context.baseContext
-    }
-    return null
-}
+import com.chiu.renovadoproyecto1.features.juegos.presentation.View.components.ImageCameraPicker
+import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.CameraState
 
 @Composable
 fun CreateJuegoDialog(
     onDismiss: () -> Unit,
-    onConfirm: (Juego) -> Unit
+    onConfirm: (Juego) -> Unit,
+    cameraState: CameraState,
+    onCapturePhoto: () -> Unit,
+    onRequestPermission: () -> Unit,
+    onResetCameraState: () -> Unit,
+    hasCameraPermission: Boolean,
+    isCameraAvailable: Boolean
 ) {
-    val context = LocalContext.current
-    val activity = remember(context) {
-        context.findActivity() as? FragmentActivity
-    }
-
     var nombre by remember { mutableStateOf("") }
     var compania by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
@@ -69,7 +57,12 @@ fun CreateJuegoDialog(
                     selectedImage = logo,
                     onImageSelected = { selectedLogo -> logo = selectedLogo },
                     placeholder = "Logo del juego",
-                    activity = activity // ← Pasar la activity encontrada
+                    cameraState = cameraState,
+                    onCapturePhoto = onCapturePhoto,
+                    onRequestPermission = onRequestPermission,
+                    onResetCameraState = onResetCameraState,
+                    hasCameraPermission = hasCameraPermission,
+                    isCameraAvailable = isCameraAvailable
                 )
 
                 OutlinedTextField(
@@ -120,7 +113,6 @@ fun CreateJuegoDialog(
                         if (logo.isNullOrBlank()) {
                             return@Button
                         }
-
                         val nuevoJuego = Juego(
                             nombre = nombre.trim(),
                             compania = compania.trim(),
@@ -160,13 +152,14 @@ fun CreateJuegoDialog(
 fun EditJuegoDialog(
     juego: Juego,
     onDismiss: () -> Unit,
-    onConfirm: (Juego) -> Unit
+    onConfirm: (Juego) -> Unit,
+    cameraState: CameraState,
+    onCapturePhoto: () -> Unit,
+    onRequestPermission: () -> Unit,
+    onResetCameraState: () -> Unit,
+    hasCameraPermission: Boolean,
+    isCameraAvailable: Boolean
 ) {
-    val context = LocalContext.current
-    val activity = remember(context) {
-        context.findActivity() as? FragmentActivity
-    }
-
     var nombre by remember { mutableStateOf(juego.nombre ?: "") }
     var compania by remember { mutableStateOf(juego.compania ?: "") }
     var descripcion by remember { mutableStateOf(juego.descripcion ?: "") }
@@ -197,7 +190,12 @@ fun EditJuegoDialog(
                     selectedImage = logo,
                     onImageSelected = { selectedLogo -> logo = selectedLogo },
                     placeholder = "Logo del juego",
-                    activity = activity // ← Pasar la activity encontrada
+                    cameraState = cameraState,
+                    onCapturePhoto = onCapturePhoto,
+                    onRequestPermission = onRequestPermission,
+                    onResetCameraState = onResetCameraState,
+                    hasCameraPermission = hasCameraPermission,
+                    isCameraAvailable = isCameraAvailable
                 )
 
                 OutlinedTextField(

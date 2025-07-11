@@ -2,6 +2,7 @@ package com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.chiu.renovadoproyecto1.core.hardware.domain.Camera.CapturePhotoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.CreateJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.DeleteJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.GetJuegosUseCase
@@ -13,8 +14,10 @@ class JuegosViewModelFactory(
     private val createJuegoUseCase: CreateJuegoUseCase,
     private val updateJuegoUseCase: UpdateJuegoUseCase,
     private val deleteJuegoUseCase: DeleteJuegoUseCase,
-    private val tokenRepository: TokenRepository
+    private val tokenRepository: TokenRepository,
+    private val capturePhotoUseCase: CapturePhotoUseCase
 ) : ViewModelProvider.Factory {
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return JuegosViewModel(
@@ -22,7 +25,8 @@ class JuegosViewModelFactory(
             createJuegoUseCase,
             updateJuegoUseCase,
             deleteJuegoUseCase,
-            tokenRepository
+            tokenRepository,
+            capturePhotoUseCase
         ) as T
     }
 }
