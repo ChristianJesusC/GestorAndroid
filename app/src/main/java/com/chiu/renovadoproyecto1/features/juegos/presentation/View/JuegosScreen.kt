@@ -23,12 +23,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.chiu.renovadoproyecto1.core.network.NetworkState
 import com.chiu.renovadoproyecto1.features.juegos.di.JuegosModule
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
 import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Content.*
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +43,12 @@ fun JuegosScreen(
 
     val state by viewModel.state.collectAsState()
     val authState by viewModel.authState.collectAsState()
+    val cameraState by viewModel.cameraState.collectAsState()
+
+    val networkState by viewModel.networkState.collectAsState()
+    val connectionStatus by viewModel.connectionStatus.collectAsState()
+    val connectionType by viewModel.connectionType.collectAsState()
+
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -110,17 +116,58 @@ fun JuegosScreen(
                         titleContentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     actions = {
-                        IconButton(
-                            onClick = { viewModel.logout() },
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                Icons.Default.ExitToApp,
-                                contentDescription = "Cerrar Sesión",
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
+                            IconButton(
+                                onClick = {
+                                    if (!connectionStatus) {
+                                        viewModel.retryLastOperation()
+                                    } else {
+                                        viewModel.checkNetworkStatus()
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = when (networkState) {
+                                        NetworkState.NoConnection -> Icons.Default.CloudOff
+                                        NetworkState.Wifi -> Icons.Default.Wifi
+                                        NetworkState.Mobile -> Icons.Default.SignalCellular4Bar
+                                        NetworkState.Unknown -> Icons.Default.CloudSync
+                                    },
+                                    contentDescription = if (connectionStatus) {
+                                        "Conectado por $connectionType"
+                                    } else {
+                                        "Sin conexión - Toca para reintentar"
+                                    },
+                                    tint = if (connectionStatus) {
+                                        when (networkState) {
+                                            NetworkState.Wifi -> Color(0xFF4CAF50)
+                                            NetworkState.Mobile -> Color(0xFF2196F3)
+                                            else -> MaterialTheme.colorScheme.primary
+                                        }
+                                    } else {
+                                        MaterialTheme.colorScheme.error
+                                    },
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            // Botón de logout
+                            IconButton(
+                                onClick = { viewModel.logout() },
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f))
+                            ) {
+                                Icon(
+                                    Icons.Default.ExitToApp,
+                                    contentDescription = "Cerrar Sesión",
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
                         }
                     }
                 )
@@ -154,7 +201,6 @@ fun JuegosScreen(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // Header mejorado
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
@@ -169,7 +215,6 @@ fun JuegosScreen(
                             .padding(24.dp)
                     ) {
                         if (maxWidth < 400.dp) {
-                            // Layout vertical para pantallas pequeñas
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
@@ -208,7 +253,6 @@ fun JuegosScreen(
                                 }
                             }
                         } else {
-                            // Layout horizontal para pantallas más grandes
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -255,7 +299,6 @@ fun JuegosScreen(
                     }
                 }
 
-                // Contenido principal
                 val currentState = state
                 when (currentState) {
                     is JuegosState.Loading -> {
@@ -293,22 +336,42 @@ fun JuegosScreen(
 
         if (showCreateDialog) {
             CreateJuegoDialog(
-                onDismiss = { showCreateDialog = false },
+                onDismiss = {
+                    showCreateDialog = false
+                    viewModel.resetCameraState()
+                },
                 onConfirm = { juego ->
                     viewModel.createJuego(juego)
                     showCreateDialog = false
-                }
+                    viewModel.resetCameraState()
+                },
+                cameraState = cameraState,
+                onCapturePhoto = { viewModel.capturePhoto() },
+                onRequestPermission = { viewModel.requestCameraPermission() },
+                onResetCameraState = { viewModel.resetCameraState() },
+                hasCameraPermission = viewModel.hasCameraPermission(),
+                isCameraAvailable = viewModel.isCameraAvailable()
             )
         }
 
         if (showEditDialog && juegoToEdit != null) {
             EditJuegoDialog(
                 juego = juegoToEdit!!,
-                onDismiss = { showEditDialog = false },
+                onDismiss = {
+                    showEditDialog = false
+                    viewModel.resetCameraState()
+                },
                 onConfirm = { juegoEditado ->
                     viewModel.updateJuego(juegoEditado)
                     showEditDialog = false
-                }
+                    viewModel.resetCameraState()
+                },
+                cameraState = cameraState,
+                onCapturePhoto = { viewModel.capturePhoto() },
+                onRequestPermission = { viewModel.requestCameraPermission() },
+                onResetCameraState = { viewModel.resetCameraState() },
+                hasCameraPermission = viewModel.hasCameraPermission(),
+                isCameraAvailable = viewModel.isCameraAvailable()
             )
         }
 
@@ -324,7 +387,6 @@ fun JuegosScreen(
         }
     }
 }
-
 
 @Composable
 fun EmptyJuegosCard(onAddClick: () -> Unit) {

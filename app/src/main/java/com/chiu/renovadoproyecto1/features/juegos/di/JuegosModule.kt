@@ -3,6 +3,8 @@
 package com.chiu.renovadoproyecto1.features.juegos.di
 
 import android.content.Context
+import com.chiu.renovadoproyecto1.core.di.NetworkModule  // ✅ Importar NetworkModule
+import com.chiu.renovadoproyecto1.core.hardware.di.HardwareModule
 import com.chiu.renovadoproyecto1.core.http.RetrofitHelper
 import com.chiu.renovadoproyecto1.features.juegos.data.datasource.remote.JuegosService
 import com.chiu.renovadoproyecto1.features.juegos.data.repository.JuegosRepositoryImpl
@@ -41,12 +43,21 @@ object JuegosModule {
     }
 
     fun getJuegosViewModelFactory(context: Context): JuegosViewModelFactory {
+        val capturePhotoUseCase = HardwareModule.getCapturePhotoUseCase(
+            context,
+            context as androidx.fragment.app.FragmentActivity
+        )
+
+        val checkNetworkUseCase = NetworkModule.provideCheckNetworkUseCase(context)
+
         return JuegosViewModelFactory(
-            getGetJuegosUseCase(context),
-            getCreateJuegoUseCase(context),
-            getUpdateJuegoUseCase(context),
-            getDeleteJuegoUseCase(context),
-            AppModule.getTokenRepository
+            getJuegosUseCase = getGetJuegosUseCase(context),
+            createJuegoUseCase = getCreateJuegoUseCase(context),
+            updateJuegoUseCase = getUpdateJuegoUseCase(context),
+            deleteJuegoUseCase = getDeleteJuegoUseCase(context),
+            tokenRepository = AppModule.getTokenRepository,
+            capturePhotoUseCase = capturePhotoUseCase,
+            checkNetworkUseCase = checkNetworkUseCase  // ✅ Inyectar network use case
         )
     }
 }

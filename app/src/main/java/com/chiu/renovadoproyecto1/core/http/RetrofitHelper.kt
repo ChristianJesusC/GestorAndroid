@@ -13,7 +13,7 @@ object RetrofitHelper {
     private const val TIMEOUT = 30L
 
     private var retrofit: Retrofit? = null
-    private var dataStoreManager: DataStoreManager? = null  // ← Cambio de tipo
+    private var dataStoreManager: DataStoreManager? = null
 
     fun init(dataStore: DataStoreManager) {  // ← Cambio de parámetro
         dataStoreManager = dataStore

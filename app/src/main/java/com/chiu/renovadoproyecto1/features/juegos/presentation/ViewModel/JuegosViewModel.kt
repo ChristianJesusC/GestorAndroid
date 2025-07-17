@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chiu.renovadoproyecto1.core.hardware.domain.Camera.CapturePhotoUseCase
+import com.chiu.renovadoproyecto1.core.network.domain.usecase.CheckNetworkUseCase
+import com.chiu.renovadoproyecto1.core.network.NetworkState
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.CreateJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.DeleteJuegoUseCase
@@ -21,9 +23,11 @@ class JuegosViewModel(
     private val updateJuegoUseCase: UpdateJuegoUseCase,
     private val deleteJuegoUseCase: DeleteJuegoUseCase,
     private val tokenRepository: TokenRepository,
-    private val capturePhotoUseCase: CapturePhotoUseCase
+    private val capturePhotoUseCase: CapturePhotoUseCase,
+    private val checkNetworkUseCase: CheckNetworkUseCase
 ) : ViewModel() {
 
+    // Estados existentes
     private val _state = MutableStateFlow<JuegosState>(JuegosState.Loading)
     val state: StateFlow<JuegosState> = _state.asStateFlow()
 
@@ -33,8 +37,61 @@ class JuegosViewModel(
     private val _cameraState = MutableStateFlow<CameraState>(CameraState.Idle)
     val cameraState: StateFlow<CameraState> = _cameraState.asStateFlow()
 
+    // ✅ Estados de red
+    private val _networkState = MutableStateFlow<NetworkState>(NetworkState.Unknown)
+    val networkState: StateFlow<NetworkState> = _networkState.asStateFlow()
+
+    private val _connectionStatus = MutableStateFlow(false)
+    val connectionStatus: StateFlow<Boolean> = _connectionStatus.asStateFlow()
+
+    private val _connectionType = MutableStateFlow("Verificando...")
+    val connectionType: StateFlow<String> = _connectionType.asStateFlow()
+
+    private var lastFailedOperation: (() -> Unit)? = null
+
     init {
         checkAuthAndLoadJuegos()
+        observeNetworkStatus()
+    }
+
+    private fun observeNetworkStatus() {
+        viewModelScope.launch {
+            checkNetworkUseCase.getNetworkState().collect { networkState ->
+                _networkState.value = networkState
+                Log.d("JuegosViewModel", "Network state changed: $networkState")
+            }
+        }
+
+        viewModelScope.launch {
+            checkNetworkUseCase.isConnected().collect { isConnected ->
+                _connectionStatus.value = isConnected
+                Log.d("JuegosViewModel", "Connection status: $isConnected")
+            }
+        }
+
+        viewModelScope.launch {
+            checkNetworkUseCase.getConnectionType().collect { connectionType ->
+                _connectionType.value = connectionType
+                Log.d("JuegosViewModel", "Connection type: $connectionType")
+            }
+        }
+    }
+
+    fun checkNetworkStatus() {
+        viewModelScope.launch {
+            val currentState = checkNetworkUseCase.checkNetworkStatus()
+            _networkState.value = currentState
+            Log.d("JuegosViewModel", "Manual network check: $currentState")
+        }
+    }
+
+    fun retryLastOperation() {
+        if (_connectionStatus.value) {
+            lastFailedOperation?.invoke() ?: loadJuegos()
+            lastFailedOperation = null
+        } else {
+            Log.d("JuegosViewModel", "Cannot retry - no connection available")
+        }
     }
 
     fun isCameraAvailable(): Boolean = capturePhotoUseCase.isAvailable()
@@ -102,15 +159,23 @@ class JuegosViewModel(
             val isValid = checkTokenValid()
             if (!isValid) return@launch
 
+            if (!_connectionStatus.value) {
+                _state.value = JuegosState.Error("Sin conexión a internet")
+                lastFailedOperation = { loadJuegos() }
+                return@launch
+            }
+
             _state.value = JuegosState.Loading
 
             getJuegosUseCase().fold(
                 onSuccess = { juegos ->
                     _state.value = JuegosState.Success(juegos)
+                    lastFailedOperation = null
                     Log.d("JuegosViewModel", "Juegos cargados: ${juegos.size}")
                 },
                 onFailure = { exception ->
                     Log.e("JuegosViewModel", "Error cargando juegos: ${exception.message}")
+                    lastFailedOperation = { loadJuegos() }
                     if (isAuthError(exception)) {
                         logout()
                     } else {
@@ -124,21 +189,30 @@ class JuegosViewModel(
     fun createJuego(juego: Juego) {
         viewModelScope.launch {
             try {
+                if (!_connectionStatus.value) {
+                    _state.value = JuegosState.Error("Sin conexión a internet")
+                    lastFailedOperation = { createJuego(juego) }
+                    return@launch
+                }
+
                 _state.value = JuegosState.Loading
                 Log.d("JuegosViewModel", "Creando juego: ${juego.nombre}")
 
                 createJuegoUseCase(juego).fold(
                     onSuccess = {
                         Log.d("JuegosViewModel", "✅ Juego creado exitosamente")
+                        lastFailedOperation = null
                         loadJuegos()
                     },
                     onFailure = { error ->
                         Log.e("JuegosViewModel", "❌ Error: ${error.message}")
+                        lastFailedOperation = { createJuego(juego) }
                         _state.value = JuegosState.Error(error.message ?: "Error desconocido")
                     }
                 )
             } catch (e: Exception) {
                 Log.e("JuegosViewModel", "❌ Excepción: ${e.message}", e)
+                lastFailedOperation = { createJuego(juego) }
                 _state.value = JuegosState.Error("Error inesperado: ${e.message}")
             }
         }
@@ -149,16 +223,24 @@ class JuegosViewModel(
             val isValid = checkTokenValid()
             if (!isValid) return@launch
 
+            if (!_connectionStatus.value) {
+                _state.value = JuegosState.Error("Sin conexión a internet")
+                lastFailedOperation = { updateJuego(juego) }
+                return@launch
+            }
+
             _state.value = JuegosState.Loading
 
             updateJuegoUseCase(juego).fold(
                 onSuccess = { juegoActualizado ->
                     _state.value = JuegosState.ActionSuccess("Juego actualizado exitosamente")
+                    lastFailedOperation = null
                     Log.d("JuegosViewModel", "Juego actualizado: ${juegoActualizado.nombre}")
                     loadJuegos()
                 },
                 onFailure = { exception ->
                     Log.e("JuegosViewModel", "Error actualizando juego: ${exception.message}")
+                    lastFailedOperation = { updateJuego(juego) }
                     if (isAuthError(exception)) {
                         logout()
                     } else {
@@ -174,16 +256,24 @@ class JuegosViewModel(
             val isValid = checkTokenValid()
             if (!isValid) return@launch
 
+            if (!_connectionStatus.value) {
+                _state.value = JuegosState.Error("Sin conexión a internet")
+                lastFailedOperation = { deleteJuego(id) }
+                return@launch
+            }
+
             _state.value = JuegosState.Loading
 
             deleteJuegoUseCase(id).fold(
                 onSuccess = {
                     _state.value = JuegosState.ActionSuccess("Juego eliminado exitosamente")
+                    lastFailedOperation = null
                     Log.d("JuegosViewModel", "Juego eliminado con ID: $id")
                     loadJuegos()
                 },
                 onFailure = { exception ->
                     Log.e("JuegosViewModel", "Error eliminando juego: ${exception.message}")
+                    lastFailedOperation = { deleteJuego(id) }
                     if (isAuthError(exception)) {
                         logout()
                     } else {
