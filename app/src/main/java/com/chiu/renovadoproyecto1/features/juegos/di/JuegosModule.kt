@@ -50,8 +50,8 @@ object JuegosModule {
         )
 
         val checkNetworkUseCase = NetworkModule.provideCheckNetworkUseCase(context)
-
         val saveOfflineJuegoUseCase = OfflineModule.provideSaveOfflineJuegoUseCase(context)
+        val offlineRepository = OfflineModule.provideOfflineRepository(context)
 
         return JuegosViewModelFactory(
             getJuegosUseCase = getGetJuegosUseCase(context),
@@ -61,7 +61,8 @@ object JuegosModule {
             tokenRepository = AppModule.getTokenRepository,
             capturePhotoUseCase = capturePhotoUseCase,
             checkNetworkUseCase = checkNetworkUseCase,
-            saveOfflineJuegoUseCase = saveOfflineJuegoUseCase
+            saveOfflineJuegoUseCase = saveOfflineJuegoUseCase,
+            offlineRepository = offlineRepository
         )
     }
 }

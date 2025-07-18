@@ -6,5 +6,6 @@ data class Juego(
     val compania: String? = null,
     val descripcion: String? = null,
     val cantidad: Int? = null,
-    val logo: String? = null
+    val logo: String? = null,
+    val isOffline: Boolean = false
 )

@@ -10,6 +10,8 @@ import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.DeleteJuegoUseC
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.GetJuegosUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.UpdateJuegoUseCase
 import com.chiu.renovadoproyecto1.features.login.domain.repository.TokenRepository
+import com.chiu.renovadoproyecto1.core.offline.domain.repository.OfflineRepository
+
 
 class JuegosViewModelFactory(
     private val getJuegosUseCase: GetJuegosUseCase,
@@ -19,7 +21,8 @@ class JuegosViewModelFactory(
     private val tokenRepository: TokenRepository,
     private val capturePhotoUseCase: CapturePhotoUseCase,
     private val checkNetworkUseCase: CheckNetworkUseCase,
-    private val saveOfflineJuegoUseCase: SaveOfflineJuegoUseCase
+    private val saveOfflineJuegoUseCase: SaveOfflineJuegoUseCase,
+    private val offlineRepository: OfflineRepository,
 
 ) : ViewModelProvider.Factory {
 
@@ -33,7 +36,9 @@ class JuegosViewModelFactory(
             tokenRepository = tokenRepository,
             capturePhotoUseCase = capturePhotoUseCase,
             checkNetworkUseCase = checkNetworkUseCase,
-            saveOfflineJuegoUseCase = saveOfflineJuegoUseCase
+            saveOfflineJuegoUseCase = saveOfflineJuegoUseCase,
+            offlineRepository = offlineRepository
+
         ) as T
     }
 }

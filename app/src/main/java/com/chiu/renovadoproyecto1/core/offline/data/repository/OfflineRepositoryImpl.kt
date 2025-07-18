@@ -13,6 +13,8 @@ class OfflineRepositoryImpl(
 
     override suspend fun saveOfflineJuego(juego: Juego): Result<Unit> {
         return try {
+            Log.d("OfflineRepository", "📝 Guardando en base de datos...")
+
             val offlineJuego = OfflineJuegoEntity(
                 nombre = juego.nombre,
                 compania = juego.compania,
@@ -22,17 +24,26 @@ class OfflineRepositoryImpl(
                 fechaCreacion = System.currentTimeMillis()
             )
 
-            offlineJuegosDao.insertOfflineJuego(offlineJuego)
-            Log.d("OfflineRepository", "Juego guardado offline: ${juego.nombre}")
+            val insertedId = offlineJuegosDao.insertOfflineJuego(offlineJuego)
+
+            val count = offlineJuegosDao.getOfflineJuegosCount()
+            Log.d("OfflineRepository", "📈 Total juegos offline en BD: $count")
+
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("OfflineRepository", "Error guardando juego offline: ${e.message}")
+            Log.e("OfflineRepository", "❌ Error en saveOfflineJuego: ${e.message}", e)
             Result.failure(e)
         }
     }
 
     override suspend fun getAllOfflineJuegos(): List<OfflineJuegoEntity> {
-        return offlineJuegosDao.getAllOfflineJuegos()
+        val juegos = offlineJuegosDao.getAllOfflineJuegos()
+        Log.d("OfflineRepository", "📋 Obtenidos ${juegos.size} juegos offline")
+        return juegos
+    }
+
+    override fun getAllOfflineJuegosFlow(): Flow<List<OfflineJuegoEntity>> {
+        return offlineJuegosDao.getAllOfflineJuegosFlow()
     }
 
     override fun getOfflineJuegosCountFlow(): Flow<Int> {
@@ -41,5 +52,17 @@ class OfflineRepositoryImpl(
 
     override suspend fun getOfflineJuegosCount(): Int {
         return offlineJuegosDao.getOfflineJuegosCount()
+    }
+
+    override suspend fun deleteOfflineJuego(juego: OfflineJuegoEntity) {
+        offlineJuegosDao.deleteOfflineJuego(juego)
+    }
+
+    override suspend fun deleteOfflineJuegoById(id: Int) {
+        offlineJuegosDao.deleteOfflineJuegoById(id)
+    }
+
+    override suspend fun deleteAllOfflineJuegos() {
+        offlineJuegosDao.deleteAllOfflineJuegos()
     }
 }

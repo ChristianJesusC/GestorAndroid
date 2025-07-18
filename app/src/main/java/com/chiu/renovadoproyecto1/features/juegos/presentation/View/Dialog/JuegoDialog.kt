@@ -293,7 +293,7 @@ fun DeleteJuegoDialog(
         },
         title = {
             Text(
-                "Eliminar Videojuego",
+                if (juego.isOffline) "Eliminar Juego Offline" else "Eliminar Videojuego",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -304,7 +304,11 @@ fun DeleteJuegoDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "¿Estás seguro de que quieres eliminar este juego?",
+                    if (juego.isOffline) {
+                        "¿Estás seguro de que quieres eliminar este juego offline?"
+                    } else {
+                        "¿Estás seguro de que quieres eliminar este juego?"
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center
                 )
@@ -315,17 +319,38 @@ fun DeleteJuegoDialog(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(
-                        text = "🎮 ${juego.nombre ?: "Sin nombre"}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                    Row(
                         modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (juego.isOffline) "💾" else "🎮",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "${juego.nombre ?: "Sin nombre"}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (juego.isOffline) {
+                                Text(
+                                    text = "📱 OFFLINE",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "Esta acción no se puede deshacer",
+                    text = if (juego.isOffline) {
+                        "Se eliminará solo de tu dispositivo"
+                    } else {
+                        "Esta acción no se puede deshacer"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center

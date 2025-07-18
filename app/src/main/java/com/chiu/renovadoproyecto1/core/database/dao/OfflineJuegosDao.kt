@@ -27,4 +27,7 @@ interface OfflineJuegosDao {
 
     @Query("SELECT COUNT(*) FROM offline_juegos")
     fun getOfflineJuegosCountFlow(): Flow<Int>
+
+    @Query("DELETE FROM offline_juegos")
+    suspend fun deleteAllOfflineJuegos()
 }

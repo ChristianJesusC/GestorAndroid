@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import android.util.Log
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -233,12 +234,25 @@ fun JuegosScreen(
                                     )
                                     val currentState = state
                                     if (currentState is JuegosState.Success) {
-                                        Text(
-                                            text = "📊 ${currentState.juegos.size} ${if (currentState.juegos.size == 1) "título disponible" else "títulos disponibles"}",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Medium
-                                        )
+                                        val onlineCount = currentState.juegos.count { !it.isOffline }
+                                        val offlineCount = currentState.juegos.count { it.isOffline }
+
+                                        Column {
+                                            Text(
+                                                text = "📊 ${currentState.juegos.size} ${if (currentState.juegos.size == 1) "título disponible" else "títulos disponibles"}",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Medium
+                                            )
+
+                                            if (offlineCount > 0) {
+                                                Text(
+                                                    text = "🌐 Online: $onlineCount • 💾 Offline: $offlineCount",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
                                     }
                                 }
 
@@ -366,6 +380,7 @@ fun JuegosScreen(
                         }
                     }
                 }
+
             }
         }
 
@@ -415,7 +430,16 @@ fun JuegosScreen(
                 juego = juegoToDelete!!,
                 onDismiss = { showDeleteDialog = false },
                 onConfirm = {
-                    viewModel.deleteJuego(juegoToDelete!!.id!!)
+                    val juego = juegoToDelete!!
+                    if (juego.isOffline) {
+                        viewModel.deleteOfflineJuego(juego)
+                    } else {
+                        juego.id?.let { id ->
+                            viewModel.deleteJuego(id)
+                        } ?: run {
+                            Log.e("JuegosScreen", "❌ ID nulo para juego online")
+                        }
+                    }
                     showDeleteDialog = false
                 }
             )
@@ -493,7 +517,12 @@ fun JuegoCard(
             .scale(scale),
         elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            // ✅ Color diferente para juegos offline
+            containerColor = if (juego.isOffline) {
+                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         ),
         shape = RoundedCornerShape(24.dp)
     ) {
@@ -503,20 +532,48 @@ fun JuegoCard(
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.surface,
+                            if (juego.isOffline) {
+                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            },
                             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         )
                     )
                 )
                 .padding(24.dp)
         ) {
+            // ✅ Indicador offline en la parte superior
+            if (juego.isOffline) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "📱 OFFLINE",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onTertiary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
                 GameImage(
-                    imageData  = juego.logo,
+                    imageData = juego.logo,
                     gameName = juego.nombre,
                     modifier = Modifier
                         .size(80.dp)
@@ -526,20 +583,34 @@ fun JuegoCard(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = juego.nombre ?: "Sin nombre",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = juego.nombre ?: "Sin nombre",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        if (juego.isOffline) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "💾",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            containerColor = if (juego.isOffline) {
+                                MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                            } else {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            }
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -554,7 +625,11 @@ fun JuegoCard(
                                     text = juego.compania ?: "Sin compañía",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = if (juego.isOffline) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    }
                                 )
                             }
 
@@ -565,7 +640,11 @@ fun JuegoCard(
                                     text = "Stock: ${juego.cantidad ?: 0}",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = if (juego.isOffline) {
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    }
                                 )
                             }
                         }
@@ -588,17 +667,26 @@ fun JuegoCard(
                     FilledTonalIconButton(
                         onClick = onEdit,
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                            containerColor = if (juego.isOffline) {
+                                MaterialTheme.colorScheme.tertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.primaryContainer
+                            }
                         ),
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Editar",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            tint = if (juego.isOffline) {
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            },
                             modifier = Modifier.size(20.dp)
                         )
                     }
+
                     FilledTonalIconButton(
                         onClick = onDelete,
                         colors = IconButtonDefaults.filledTonalIconButtonColors(

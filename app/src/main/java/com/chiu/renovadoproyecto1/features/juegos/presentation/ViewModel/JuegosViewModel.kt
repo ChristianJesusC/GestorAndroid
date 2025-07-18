@@ -7,6 +7,7 @@ import com.chiu.renovadoproyecto1.core.hardware.domain.Camera.CapturePhotoUseCas
 import com.chiu.renovadoproyecto1.core.network.domain.usecase.CheckNetworkUseCase
 import com.chiu.renovadoproyecto1.core.network.NetworkState
 import com.chiu.renovadoproyecto1.core.offline.domain.usecase.SaveOfflineJuegoUseCase
+import com.chiu.renovadoproyecto1.core.offline.domain.repository.OfflineRepository
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.CreateJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.DeleteJuegoUseCase
@@ -26,7 +27,8 @@ class JuegosViewModel(
     private val tokenRepository: TokenRepository,
     private val capturePhotoUseCase: CapturePhotoUseCase,
     private val checkNetworkUseCase: CheckNetworkUseCase,
-    private val saveOfflineJuegoUseCase: SaveOfflineJuegoUseCase
+    private val saveOfflineJuegoUseCase: SaveOfflineJuegoUseCase,
+    private val offlineRepository: OfflineRepository // ✅ NUEVA DEPENDENCIA
 ) : ViewModel() {
 
     // Estados existentes
@@ -85,9 +87,55 @@ class JuegosViewModel(
 
     private fun observeOfflineJuegos() {
         viewModelScope.launch {
-            // Aquí podrías observar el Flow de cantidad offline si quisieras mostrar contador
-            // Por ahora solo mantenemos la funcionalidad básica
-            Log.d("JuegosViewModel", "Observando juegos offline...")
+            offlineRepository.getOfflineJuegosCountFlow().collect { count ->
+                _offlineJuegosCount.value = count
+                Log.d("JuegosViewModel", "Juegos offline: $count")
+
+                // Recargar datos cuando cambien los juegos offline
+                loadAllJuegos()
+            }
+        }
+    }
+
+    private suspend fun loadAllJuegos() {
+        try {
+            val onlineJuegos = if (_connectionStatus.value) {
+                // Cargar de API si hay conexión
+                getJuegosUseCase().fold(
+                    onSuccess = { it },
+                    onFailure = {
+                        Log.e("JuegosViewModel", "Error cargando juegos online: ${it.message}")
+                        emptyList()
+                    }
+                )
+            } else {
+                emptyList()
+            }
+
+            val offlineJuegosEntities = offlineRepository.getAllOfflineJuegos()
+
+            val offlineJuegos = offlineJuegosEntities.map { entity ->
+                Juego(
+                    id = null,
+                    nombre = entity.nombre,
+                    compania = entity.compania,
+                    descripcion = entity.descripcion,
+                    cantidad = entity.cantidad,
+                    logo = entity.logo,
+                    isOffline = true
+                )
+            }
+
+            // Combinar ambas listas
+            val allJuegos = onlineJuegos + offlineJuegos
+
+            Log.d("JuegosViewModel", "Total juegos: ${allJuegos.size} (Online: ${onlineJuegos.size}, Offline: ${offlineJuegos.size})")
+
+            _state.value = JuegosState.Success(allJuegos)
+
+        } catch (e: Exception) {
+            Log.e("JuegosViewModel", "Error cargando todos los juegos: ${e.message}")
+            _state.value = JuegosState.Error("Error cargando juegos: ${e.message}")
         }
     }
 
@@ -124,34 +172,16 @@ class JuegosViewModel(
     }
 
     fun capturePhoto() {
-        Log.d("JuegosViewModel", "🔍 Iniciando captura de foto")
-        Log.d("JuegosViewModel", "🔍 Cámara disponible: ${isCameraAvailable()}")
-        Log.d("JuegosViewModel", "🔍 Permisos: ${hasCameraPermission()}")
-
-        if (!hasCameraPermission()) {
-            Log.e("JuegosViewModel", "❌ Sin permisos de cámara")
-            _cameraState.value = CameraState.Error("Sin permisos de cámara")
-            return
-        }
-
-        if (!isCameraAvailable()) {
-            Log.e("JuegosViewModel", "❌ Cámara no disponible")
-            _cameraState.value = CameraState.Error("Cámara no disponible")
-            return
-        }
-
         _cameraState.value = CameraState.Capturing
-        Log.d("JuegosViewModel", "📸 Llamando capturePhotoUseCase...")
-
         capturePhotoUseCase.capturePhoto(
             onSuccess = { base64Image ->
-                Log.d("JuegosViewModel", "✅ Foto capturada: ${base64Image.length} caracteres")
                 val fullBase64 = "data:image/jpeg;base64,$base64Image"
                 _cameraState.value = CameraState.PhotoCaptured(fullBase64)
+                Log.d("JuegosViewModel", "Foto capturada exitosamente")
             },
             onError = { error ->
-                Log.e("JuegosViewModel", "❌ Error capturando foto: $error")
                 _cameraState.value = CameraState.Error(error)
+                Log.e("JuegosViewModel", "Error capturando foto: $error")
             }
         )
     }
@@ -189,32 +219,12 @@ class JuegosViewModel(
     fun loadJuegos() {
         viewModelScope.launch {
             val isValid = checkTokenValid()
-            if (!isValid) return@launch
-
-            if (!_connectionStatus.value) {
-                _state.value = JuegosState.Error("Sin conexión a internet")
-                lastFailedOperation = { loadJuegos() }
-                return@launch
-            }
+            if (!isValid && _connectionStatus.value) return@launch
 
             _state.value = JuegosState.Loading
 
-            getJuegosUseCase().fold(
-                onSuccess = { juegos ->
-                    _state.value = JuegosState.Success(juegos)
-                    lastFailedOperation = null
-                    Log.d("JuegosViewModel", "Juegos cargados: ${juegos.size}")
-                },
-                onFailure = { exception ->
-                    Log.e("JuegosViewModel", "Error cargando juegos: ${exception.message}")
-                    lastFailedOperation = { loadJuegos() }
-                    if (isAuthError(exception)) {
-                        logout()
-                    } else {
-                        _state.value = JuegosState.Error(exception.message ?: "Error desconocido")
-                    }
-                }
-            )
+            loadAllJuegos() // ✅ Usar nueva función
+            lastFailedOperation = null
         }
     }
 
@@ -256,6 +266,22 @@ class JuegosViewModel(
                 Log.e("JuegosViewModel", "❌ Excepción: ${e.message}", e)
                 lastFailedOperation = { createJuego(juego) }
                 _state.value = JuegosState.Error("Error inesperado: ${e.message}")
+            }
+        }
+    }
+
+    fun debugShowOfflineJuegos() {
+        viewModelScope.launch {
+            try {
+                val juegos = offlineRepository.getAllOfflineJuegos()
+                Log.d("DEBUG_OFFLINE", "=== JUEGOS EN ROOM ===")
+                Log.d("DEBUG_OFFLINE", "Total: ${juegos.size}")
+
+                if (juegos.isEmpty()) {
+                    Log.d("DEBUG_OFFLINE", "❌ No hay juegos offline guardados")
+                }
+            } catch (e: Exception) {
+                Log.e("DEBUG_OFFLINE", "Error: ${e.message}")
             }
         }
     }
@@ -325,6 +351,33 @@ class JuegosViewModel(
             )
         }
     }
+    fun deleteOfflineJuego(juego: Juego) {
+        viewModelScope.launch {
+            try {
+                if (juego.isOffline) {
+                    Log.d("JuegosViewModel", "Eliminando juego offline: ${juego.nombre}")
+
+                    val offlineJuegos = offlineRepository.getAllOfflineJuegos()
+                    val juegoToDelete = offlineJuegos.find {
+                        it.nombre == juego.nombre && it.compania == juego.compania
+                    }
+
+                    if (juegoToDelete != null) {
+                        offlineRepository.deleteOfflineJuego(juegoToDelete)
+                        _state.value = JuegosState.ActionSuccess("Juego offline eliminado exitosamente")
+                        Log.d("JuegosViewModel", "✅ Juego offline eliminado")
+                    } else {
+                        _state.value = JuegosState.Error("No se encontró el juego offline")
+                    }
+                } else {
+                    _state.value = JuegosState.Error("Este juego no es offline")
+                }
+            } catch (e: Exception) {
+                Log.e("JuegosViewModel", "❌ Error eliminando juego offline: ${e.message}")
+                _state.value = JuegosState.Error("Error eliminando juego offline: ${e.message}")
+            }
+        }
+    }
 
     private fun isAuthError(exception: Throwable): Boolean {
         val message = exception.message?.lowercase() ?: ""
@@ -349,7 +402,7 @@ sealed class JuegosState {
     data class Success(val juegos: List<Juego>) : JuegosState()
     data class Error(val error: String) : JuegosState()
     data class ActionSuccess(val message: String) : JuegosState()
-    data class OfflineSaved(val message: String) : JuegosState() // ✅ Nuevo estado para guardado offline
+    data class OfflineSaved(val message: String) : JuegosState()
 }
 
 sealed class CameraState {

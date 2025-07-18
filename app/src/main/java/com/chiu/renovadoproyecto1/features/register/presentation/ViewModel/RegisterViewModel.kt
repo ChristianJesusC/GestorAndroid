@@ -56,6 +56,7 @@ class RegisterViewModel(
     fun clearMessage() {
         _uiState.value = _uiState.value.copy(message = null)
     }
+
 }
 
 data class RegisterUiState(

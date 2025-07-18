@@ -18,10 +18,6 @@ class SaveOfflineJuegoUseCaseImpl(
             result.fold(
                 onSuccess = {
                     Log.d("SaveOfflineUseCase", "✅ Juego guardado exitosamente en Room")
-                    Log.d("SaveOfflineUseCase", "   - Nombre: ${juego.nombre}")
-                    Log.d("SaveOfflineUseCase", "   - Compañía: ${juego.compania}")
-                    Log.d("SaveOfflineUseCase", "   - Cantidad: ${juego.cantidad}")
-                    Log.d("SaveOfflineUseCase", "   - Logo: ${juego.logo?.take(50)}...")
                 },
                 onFailure = { error ->
                     Log.e("SaveOfflineUseCase", "❌ Error guardando: ${error.message}")
