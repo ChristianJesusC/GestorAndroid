@@ -53,13 +53,23 @@ fun CreateJuegoDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // En CreateJuegoDialog.kt, agrega estos logs
                 ImageCameraPicker(
                     selectedImage = logo,
-                    onImageSelected = { selectedLogo -> logo = selectedLogo },
+                    onImageSelected = { selectedLogo ->
+                        Log.d("CreateDialog", "🖼️ Imagen seleccionada: ${selectedLogo?.length}")
+                        logo = selectedLogo
+                    },
                     placeholder = "Logo del juego",
                     cameraState = cameraState,
-                    onCapturePhoto = onCapturePhoto,
-                    onRequestPermission = onRequestPermission,
+                    onCapturePhoto = {
+                        Log.d("CreateDialog", "📸 onCapturePhoto llamado")
+                        onCapturePhoto()
+                    },
+                    onRequestPermission = {
+                        Log.d("CreateDialog", "📋 onRequestPermission llamado")
+                        onRequestPermission()
+                    },
                     onResetCameraState = onResetCameraState,
                     hasCameraPermission = hasCameraPermission,
                     isCameraAvailable = isCameraAvailable

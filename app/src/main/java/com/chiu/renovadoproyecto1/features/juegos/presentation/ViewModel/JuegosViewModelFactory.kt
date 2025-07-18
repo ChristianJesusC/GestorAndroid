@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.chiu.renovadoproyecto1.core.hardware.domain.Camera.CapturePhotoUseCase
 import com.chiu.renovadoproyecto1.core.network.domain.usecase.CheckNetworkUseCase
+import com.chiu.renovadoproyecto1.core.offline.domain.usecase.SaveOfflineJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.CreateJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.DeleteJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.GetJuegosUseCase
@@ -17,7 +18,9 @@ class JuegosViewModelFactory(
     private val deleteJuegoUseCase: DeleteJuegoUseCase,
     private val tokenRepository: TokenRepository,
     private val capturePhotoUseCase: CapturePhotoUseCase,
-    private val checkNetworkUseCase: CheckNetworkUseCase
+    private val checkNetworkUseCase: CheckNetworkUseCase,
+    private val saveOfflineJuegoUseCase: SaveOfflineJuegoUseCase
+
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -29,7 +32,8 @@ class JuegosViewModelFactory(
             deleteJuegoUseCase = deleteJuegoUseCase,
             tokenRepository = tokenRepository,
             capturePhotoUseCase = capturePhotoUseCase,
-            checkNetworkUseCase = checkNetworkUseCase
+            checkNetworkUseCase = checkNetworkUseCase,
+            saveOfflineJuegoUseCase = saveOfflineJuegoUseCase
         ) as T
     }
 }

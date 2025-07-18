@@ -3,7 +3,8 @@
 package com.chiu.renovadoproyecto1.features.juegos.di
 
 import android.content.Context
-import com.chiu.renovadoproyecto1.core.di.NetworkModule  // ✅ Importar NetworkModule
+import com.chiu.renovadoproyecto1.core.di.NetworkModule
+import com.chiu.renovadoproyecto1.core.di.OfflineModule
 import com.chiu.renovadoproyecto1.core.hardware.di.HardwareModule
 import com.chiu.renovadoproyecto1.core.http.RetrofitHelper
 import com.chiu.renovadoproyecto1.features.juegos.data.datasource.remote.JuegosService
@@ -50,6 +51,8 @@ object JuegosModule {
 
         val checkNetworkUseCase = NetworkModule.provideCheckNetworkUseCase(context)
 
+        val saveOfflineJuegoUseCase = OfflineModule.provideSaveOfflineJuegoUseCase(context)
+
         return JuegosViewModelFactory(
             getJuegosUseCase = getGetJuegosUseCase(context),
             createJuegoUseCase = getCreateJuegoUseCase(context),
@@ -57,7 +60,8 @@ object JuegosModule {
             deleteJuegoUseCase = getDeleteJuegoUseCase(context),
             tokenRepository = AppModule.getTokenRepository,
             capturePhotoUseCase = capturePhotoUseCase,
-            checkNetworkUseCase = checkNetworkUseCase  // ✅ Inyectar network use case
+            checkNetworkUseCase = checkNetworkUseCase,
+            saveOfflineJuegoUseCase = saveOfflineJuegoUseCase
         )
     }
 }

@@ -40,7 +40,7 @@ fun NavigationWrapper() {
         navController = navController,
         startDestination = Login
     ) {
-        composable<Login> { // ← AGREGAR <Login>
+        composable<Login> {
             LoginScreen(
                 viewModel = loginViewModel,
                 onNavigateToJuegos = {
@@ -54,7 +54,7 @@ fun NavigationWrapper() {
             )
         }
 
-        composable<Register> { // ← AGREGAR <Register>
+        composable<Register> {
             val registerViewModel: RegisterViewModel = viewModel(
                 factory = RegisterViewModelFactory(RegisterModule.registerUseCase)
             )
@@ -72,7 +72,7 @@ fun NavigationWrapper() {
             )
         }
 
-        composable<Juegos> { // ← AGREGAR <Juegos>
+        composable<Juegos> {
             JuegosScreen(
                 onNavigateToLogin = {
                     loginViewModel.logout()

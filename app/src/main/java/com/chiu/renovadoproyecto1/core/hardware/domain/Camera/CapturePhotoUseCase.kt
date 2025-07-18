@@ -2,15 +2,19 @@ package com.chiu.renovadoproyecto1.core.hardware.domain.Camera
 
 import android.graphics.Bitmap
 import android.util.Base64
-import android.util.Log
 import java.io.ByteArrayOutputStream
 
 class CapturePhotoUseCase(
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraManager  // ✅ Usa CameraManager en lugar de FragmentActivity
 ) {
-    fun isAvailable(): Boolean = cameraManager.isAvailable()
 
-    fun hasPermission(): Boolean = cameraManager.hasPermission()
+    fun isAvailable(): Boolean {
+        return cameraManager.isAvailable()
+    }
+
+    fun hasPermission(): Boolean {
+        return cameraManager.hasPermission()
+    }
 
     fun requestPermission(onResult: (Boolean) -> Unit) {
         cameraManager.requestPermission(onResult)
@@ -20,31 +24,16 @@ class CapturePhotoUseCase(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        if (!cameraManager.isAvailable()) {
-            onError("Cámara no disponible en este dispositivo")
-            return
-        }
-
-        if (!cameraManager.hasPermission()) {
-            onError("Permisos de cámara no concedidos")
-            return
-        }
-
         cameraManager.capturePhoto(
             onSuccess = { bitmap ->
                 try {
-                    val base64String = bitmapToBase64(bitmap)
-                    Log.d("CapturePhotoUseCase", "Foto capturada y convertida a Base64")
-                    onSuccess(base64String)
+                    val base64 = bitmapToBase64(bitmap)
+                    onSuccess(base64)
                 } catch (e: Exception) {
-                    Log.e("CapturePhotoUseCase", "Error convirtiendo imagen: ${e.message}")
-                    onError("Error procesando la imagen: ${e.message}")
+                    onError("Error convirtiendo imagen: ${e.message}")
                 }
             },
-            onError = { error ->
-                Log.e("CapturePhotoUseCase", "Error capturando foto: $error")
-                onError(error)
-            }
+            onError = onError
         )
     }
 
@@ -52,6 +41,6 @@ class CapturePhotoUseCase(
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
-        return Base64.encodeToString(byteArray, Base64.DEFAULT)
+        return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
 }

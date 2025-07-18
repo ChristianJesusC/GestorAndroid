@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.chiu.renovadoproyecto1.core.hardware.domain.Camera.CapturePhotoUseCase
 import com.chiu.renovadoproyecto1.core.network.domain.usecase.CheckNetworkUseCase
 import com.chiu.renovadoproyecto1.core.network.NetworkState
+import com.chiu.renovadoproyecto1.core.offline.domain.usecase.SaveOfflineJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.CreateJuegoUseCase
 import com.chiu.renovadoproyecto1.features.juegos.domain.usecase.DeleteJuegoUseCase
@@ -24,7 +25,8 @@ class JuegosViewModel(
     private val deleteJuegoUseCase: DeleteJuegoUseCase,
     private val tokenRepository: TokenRepository,
     private val capturePhotoUseCase: CapturePhotoUseCase,
-    private val checkNetworkUseCase: CheckNetworkUseCase
+    private val checkNetworkUseCase: CheckNetworkUseCase,
+    private val saveOfflineJuegoUseCase: SaveOfflineJuegoUseCase
 ) : ViewModel() {
 
     // Estados existentes
@@ -37,7 +39,10 @@ class JuegosViewModel(
     private val _cameraState = MutableStateFlow<CameraState>(CameraState.Idle)
     val cameraState: StateFlow<CameraState> = _cameraState.asStateFlow()
 
-    // ✅ Estados de red
+    private val _offlineJuegosCount = MutableStateFlow(0)
+    val offlineJuegosCount: StateFlow<Int> = _offlineJuegosCount.asStateFlow()
+
+    // Estados de red
     private val _networkState = MutableStateFlow<NetworkState>(NetworkState.Unknown)
     val networkState: StateFlow<NetworkState> = _networkState.asStateFlow()
 
@@ -52,6 +57,7 @@ class JuegosViewModel(
     init {
         checkAuthAndLoadJuegos()
         observeNetworkStatus()
+        observeOfflineJuegos()
     }
 
     private fun observeNetworkStatus() {
@@ -74,6 +80,14 @@ class JuegosViewModel(
                 _connectionType.value = connectionType
                 Log.d("JuegosViewModel", "Connection type: $connectionType")
             }
+        }
+    }
+
+    private fun observeOfflineJuegos() {
+        viewModelScope.launch {
+            // Aquí podrías observar el Flow de cantidad offline si quisieras mostrar contador
+            // Por ahora solo mantenemos la funcionalidad básica
+            Log.d("JuegosViewModel", "Observando juegos offline...")
         }
     }
 
@@ -110,16 +124,34 @@ class JuegosViewModel(
     }
 
     fun capturePhoto() {
+        Log.d("JuegosViewModel", "🔍 Iniciando captura de foto")
+        Log.d("JuegosViewModel", "🔍 Cámara disponible: ${isCameraAvailable()}")
+        Log.d("JuegosViewModel", "🔍 Permisos: ${hasCameraPermission()}")
+
+        if (!hasCameraPermission()) {
+            Log.e("JuegosViewModel", "❌ Sin permisos de cámara")
+            _cameraState.value = CameraState.Error("Sin permisos de cámara")
+            return
+        }
+
+        if (!isCameraAvailable()) {
+            Log.e("JuegosViewModel", "❌ Cámara no disponible")
+            _cameraState.value = CameraState.Error("Cámara no disponible")
+            return
+        }
+
         _cameraState.value = CameraState.Capturing
+        Log.d("JuegosViewModel", "📸 Llamando capturePhotoUseCase...")
+
         capturePhotoUseCase.capturePhoto(
             onSuccess = { base64Image ->
+                Log.d("JuegosViewModel", "✅ Foto capturada: ${base64Image.length} caracteres")
                 val fullBase64 = "data:image/jpeg;base64,$base64Image"
                 _cameraState.value = CameraState.PhotoCaptured(fullBase64)
-                Log.d("JuegosViewModel", "Foto capturada exitosamente")
             },
             onError = { error ->
+                Log.e("JuegosViewModel", "❌ Error capturando foto: $error")
                 _cameraState.value = CameraState.Error(error)
-                Log.e("JuegosViewModel", "Error capturando foto: $error")
             }
         )
     }
@@ -190,13 +222,23 @@ class JuegosViewModel(
         viewModelScope.launch {
             try {
                 if (!_connectionStatus.value) {
-                    _state.value = JuegosState.Error("Sin conexión a internet")
-                    lastFailedOperation = { createJuego(juego) }
+                    Log.d("JuegosViewModel", "Sin conexión - guardando juego offline: ${juego.nombre}")
+
+                    saveOfflineJuegoUseCase(juego).fold(
+                        onSuccess = {
+                            _state.value = JuegosState.OfflineSaved("Juego guardado en almacenamiento local")
+                            Log.d("JuegosViewModel", "✅ Juego guardado offline exitosamente")
+                        },
+                        onFailure = { error ->
+                            _state.value = JuegosState.Error("Error guardando offline: ${error.message}")
+                            Log.e("JuegosViewModel", "❌ Error guardando offline: ${error.message}")
+                        }
+                    )
                     return@launch
                 }
 
                 _state.value = JuegosState.Loading
-                Log.d("JuegosViewModel", "Creando juego: ${juego.nombre}")
+                Log.d("JuegosViewModel", "Creando juego online: ${juego.nombre}")
 
                 createJuegoUseCase(juego).fold(
                     onSuccess = {
@@ -307,6 +349,7 @@ sealed class JuegosState {
     data class Success(val juegos: List<Juego>) : JuegosState()
     data class Error(val error: String) : JuegosState()
     data class ActionSuccess(val message: String) : JuegosState()
+    data class OfflineSaved(val message: String) : JuegosState() // ✅ Nuevo estado para guardado offline
 }
 
 sealed class CameraState {

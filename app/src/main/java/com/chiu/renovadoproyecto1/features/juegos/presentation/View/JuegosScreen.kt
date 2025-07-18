@@ -49,24 +49,29 @@ fun JuegosScreen(
     val connectionStatus by viewModel.connectionStatus.collectAsState()
     val connectionType by viewModel.connectionType.collectAsState()
 
-
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var juegoToEdit by remember { mutableStateOf<Juego?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var juegoToDelete by remember { mutableStateOf<Juego?>(null) }
 
+    LaunchedEffect(state) {
+        val currentState = state
+        when (currentState) {
+            is JuegosState.ActionSuccess -> {
+                Toast.makeText(context, currentState.message, Toast.LENGTH_SHORT).show()
+            }
+            is JuegosState.OfflineSaved -> {
+                Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
+            }
+            else -> { }
+        }
+    }
+
     LaunchedEffect(authState) {
         if (!authState) {
             Toast.makeText(context, "Sesión expirada", Toast.LENGTH_SHORT).show()
             onNavigateToLogin()
-        }
-    }
-
-    LaunchedEffect(state) {
-        val currentState = state
-        if (currentState is JuegosState.ActionSuccess) {
-            Toast.makeText(context, currentState.message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -120,6 +125,7 @@ fun JuegosScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            // Botón de estado de red
                             IconButton(
                                 onClick = {
                                     if (!connectionStatus) {
@@ -174,7 +180,7 @@ fun JuegosScreen(
             },
             floatingActionButton = {
                 val currentState = state
-                if (currentState is JuegosState.Success) {
+                if (currentState !is JuegosState.Loading) {
                     AnimatedVisibility(
                         visible = true,
                         enter = scaleIn() + fadeIn(),
@@ -329,6 +335,35 @@ fun JuegosScreen(
 
                     is JuegosState.ActionSuccess -> {
                         ActionSuccessContent(message = currentState.message)
+                    }
+
+                    is JuegosState.OfflineSaved -> {
+                        // ✅ Mostrar contenido especial para guardado offline
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(24.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "💾",
+                                    style = MaterialTheme.typography.headlineMedium
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = currentState.message,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
