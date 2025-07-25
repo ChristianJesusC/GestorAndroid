@@ -62,7 +62,8 @@ object JuegosModule {
             capturePhotoUseCase = capturePhotoUseCase,
             checkNetworkUseCase = checkNetworkUseCase,
             saveOfflineJuegoUseCase = saveOfflineJuegoUseCase,
-            offlineRepository = offlineRepository
+            offlineRepository = offlineRepository,
+            context = context
         )
     }
 }
