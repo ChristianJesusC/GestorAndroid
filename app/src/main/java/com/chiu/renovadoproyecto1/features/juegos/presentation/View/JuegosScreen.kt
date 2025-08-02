@@ -30,6 +30,7 @@ import com.chiu.renovadoproyecto1.features.juegos.domain.model.Juego
 import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Content.*
+import com.chiu.renovadoproyecto1.features.juegos.presentation.View.components.GameImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -18,7 +18,7 @@ data class JuegoDto(
         cantidad = this.cantidad,
         logo = this.logo?.let { logoPath ->
             if (logoPath.startsWith("/uploads/")) {
-                "http://34.231.32.231:3000$logoPath"
+                "http://98.86.41.104:3000$logoPath"
             } else {
                 logoPath
             }

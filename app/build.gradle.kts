@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -95,4 +96,10 @@ dependencies {
     // Google Services
     implementation(libs.play.services.cast.framework)
     implementation(libs.ads.mobile.sdk)
+
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

@@ -32,7 +32,8 @@ fun NavigationWrapper() {
     val loginViewModel: LoginViewModel = viewModel(
         factory = LoginViewModelFactory(
             loginUseCase = AppModule.loginUseCase,
-            biometricUseCase = biometricUseCase
+            biometricUseCase = biometricUseCase,
+            context = context
         )
     )
 

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chiu.renovadoproyecto1.features.login.domain.usecase.LoginUseCase
 import com.chiu.renovadoproyecto1.core.hardware.domain.Biometric.AuthenticateBiometricUseCase
+import com.chiu.renovadoproyecto1.core.notifications.di.NotificationModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,8 @@ import kotlinx.coroutines.launch
 
 class LoginViewModel(
     private val loginUseCase: LoginUseCase,
-    private val biometricUseCase: AuthenticateBiometricUseCase
+    private val biometricUseCase: AuthenticateBiometricUseCase,
+    private val context: Context // ✅ AGREGAR CONTEXT
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -58,6 +60,8 @@ class LoginViewModel(
                     try {
                         val isLoggedIn = loginUseCase.isLoggedIn()
                         if (isLoggedIn) {
+                            registerFCMToken()
+
                             _uiState.value = _uiState.value.copy(
                                 isLoadingBiometric = false,
                                 requiresMandatoryBiometric = false,
@@ -114,6 +118,9 @@ class LoginViewModel(
             loginUseCase(username, password).fold(
                 onSuccess = { loginResponse ->
                     Log.d("LoginViewModel", "Login exitoso: ${loginResponse.mensaje}")
+
+                    registerFCMToken()
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoginSuccessful = true,
@@ -129,6 +136,38 @@ class LoginViewModel(
                     )
                 }
             )
+        }
+    }
+
+    // ✅ NUEVO MÉTODO PARA REGISTRAR FCM TOKEN
+    private fun registerFCMToken() {
+        viewModelScope.launch {
+            try {
+                Log.d("LoginViewModel", "🔔 Iniciando registro de token FCM...")
+
+                val getFCMTokenUseCase = NotificationModule.provideGetFCMTokenUseCase()
+                val registerTokenUseCase = NotificationModule.provideRegisterTokenUseCase(context)
+
+                getFCMTokenUseCase().fold(
+                    onSuccess = { fcmToken ->
+                        Log.d("LoginViewModel", "📱 Token FCM obtenido, registrando en servidor...")
+                        registerTokenUseCase(fcmToken, "android").fold(
+                            onSuccess = { message ->
+                                Log.d("LoginViewModel", "✅ Token FCM registrado exitosamente: $message")
+                            },
+                            onFailure = { error ->
+                                Log.e("LoginViewModel", "❌ Error registrando token FCM: ${error.message}")
+                                // No mostrar error al usuario, es proceso en background
+                            }
+                        )
+                    },
+                    onFailure = { error ->
+                        Log.e("LoginViewModel", "❌ Error obteniendo token FCM: ${error.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "❌ Excepción registrando FCM: ${e.message}")
+            }
         }
     }
 
@@ -153,15 +192,43 @@ class LoginViewModel(
     fun logout() {
         viewModelScope.launch {
             try {
+                unregisterFCMToken()
                 loginUseCase.logout()
                 Log.d("LoginViewModel", "Logout exitoso")
-                // Después del logout, requerir biometría nuevamente
                 _uiState.value = LoginUiState()
                 checkBiometricRequirement()
             } catch (e: Exception) {
                 Log.e("LoginViewModel", "Error en logout: ${e.message}")
                 _uiState.value = LoginUiState()
                 checkBiometricRequirement()
+            }
+        }
+    }
+
+    private fun unregisterFCMToken() {
+        viewModelScope.launch {
+            try {
+                Log.d("LoginViewModel", "🔔 Desregistrando token FCM...")
+
+                val notificationRepository = NotificationModule.provideNotificationRepository(context)
+                val storedToken = notificationRepository.getStoredToken()
+
+                if (!storedToken.isNullOrEmpty()) {
+                    notificationRepository.unregisterToken(storedToken).fold(
+                        onSuccess = { message ->
+                            Log.d("LoginViewModel", "✅ Token FCM desregistrado: $message")
+                            notificationRepository.clearToken()
+                        },
+                        onFailure = { error ->
+                            Log.e("LoginViewModel", "❌ Error desregistrando token FCM: ${error.message}")
+                            notificationRepository.clearToken()
+                        }
+                    )
+                } else {
+                    Log.d("LoginViewModel", "ℹ️ No hay token FCM para desregistrar")
+                }
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "❌ Excepción desregistrando FCM: ${e.message}")
             }
         }
     }
