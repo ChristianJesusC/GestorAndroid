@@ -37,35 +37,35 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d("FCM_Service", "🆕 Nuevo token FCM recibido")
+        Log.d("FCM_Service", "Nuevo token FCM recibido")
         Log.d("FCM_Service", "Token: ${token.take(30)}...")
 
         serviceScope.launch {
             try {
-                Log.d("FCM_Service", "📤 Registrando token en servidor...")
+                Log.d("FCM_Service", "Registrando token en servidor...")
 
                 val registerTokenUseCase = NotificationModule.provideRegisterTokenUseCase(this@AppFirebaseMessagingService)
                 val result = registerTokenUseCase(token, "android")
 
                 result.fold(
                     onSuccess = { message ->
-                        Log.d("FCM_Service", "✅ Token registrado exitosamente: $message")
+                        Log.d("FCM_Service", "Token registrado exitosamente: $message")
                     },
                     onFailure = { error ->
-                        Log.e("FCM_Service", "❌ Error registrando token: ${error.message}")
+                        Log.e("FCM_Service", "Error registrando token: ${error.message}")
                         val notificationRepository = NotificationModule.provideNotificationRepository(this@AppFirebaseMessagingService)
                         notificationRepository.saveToken(token)
-                        Log.d("FCM_Service", "💾 Token guardado localmente para registro posterior")
+                        Log.d("FCM_Service", "Token guardado localmente para registro posterior")
                     }
                 )
             } catch (e: Exception) {
-                Log.e("FCM_Service", "❌ Excepción registrando token: ${e.message}")
+                Log.e("FCM_Service", "Excepción registrando token: ${e.message}")
                 try {
                     val notificationRepository = NotificationModule.provideNotificationRepository(this@AppFirebaseMessagingService)
                     notificationRepository.saveToken(token)
-                    Log.d("FCM_Service", "💾 Token guardado localmente como fallback")
+                    Log.d("FCM_Service", "Token guardado localmente como fallback")
                 } catch (saveError: Exception) {
-                    Log.e("FCM_Service", "❌ Error guardando token localmente: ${saveError.message}")
+                    Log.e("FCM_Service", "Error guardando token localmente: ${saveError.message}")
                 }
             }
         }
@@ -74,20 +74,20 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        Log.d("FCM_Service", "📨 Mensaje FCM recibido")
-        Log.d("FCM_Service", "📋 From: ${remoteMessage.from}")
-        Log.d("FCM_Service", "📋 MessageId: ${remoteMessage.messageId}")
+        Log.d("FCM_Service", "Mensaje FCM recibido")
+        Log.d("FCM_Service", "From: ${remoteMessage.from}")
+        Log.d("FCM_Service", "MessageId: ${remoteMessage.messageId}")
 
         val title = remoteMessage.notification?.title ?: "GameStore"
         val body = remoteMessage.notification?.body ?: "Nueva notificación"
         val data = remoteMessage.data
 
-        Log.d("FCM_Service", "📋 Título: $title")
-        Log.d("FCM_Service", "📋 Cuerpo: $body")
-        Log.d("FCM_Service", "📋 Datos extras: $data")
+        Log.d("FCM_Service", "Título: $title")
+        Log.d("FCM_Service", "Cuerpo: $body")
+        Log.d("FCM_Service", "Datos extras: $data")
 
         val notificationType = data["tipo"] ?: "general"
-        Log.d("FCM_Service", "🏷️ Tipo de notificación: $notificationType")
+        Log.d("FCM_Service", "Tipo de notificación: $notificationType")
 
         showCustomNotification(title, body, data, notificationType)
     }
@@ -118,7 +118,7 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
 
             val pendingIntent = PendingIntent.getActivity(
                 this,
-                System.currentTimeMillis().toInt(), // ID único para cada notificación
+                System.currentTimeMillis().toInt(),
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -196,10 +196,10 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
                 val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.createNotificationChannel(channel)
 
-                Log.d("FCM_Service", "📢 Canal de notificaciones '$CHANNEL_NAME' creado exitosamente")
+                Log.d("FCM_Service", "Canal de notificaciones '$CHANNEL_NAME' creado exitosamente")
 
             } catch (e: Exception) {
-                Log.e("FCM_Service", "❌ Error creando canal de notificaciones: ${e.message}")
+                Log.e("FCM_Service", "Error creando canal de notificaciones: ${e.message}")
             }
         } else {
             Log.d("FCM_Service", "ℹ️ Android < O, no se requiere crear canal de notificaciones")

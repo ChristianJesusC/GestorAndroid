@@ -18,6 +18,7 @@ import com.chiu.renovadoproyecto1.features.register.di.RegisterModule
 import com.chiu.renovadoproyecto1.features.register.presentation.View.RegisterScreen
 import com.chiu.renovadoproyecto1.features.register.presentation.ViewModel.RegisterViewModel
 import com.chiu.renovadoproyecto1.features.register.presentation.ViewModel.RegisterViewModelFactory
+import com.chiu.renovadoproyecto1.features.usuarios.presentation.view.UsuariosScreen
 
 @Composable
 fun NavigationWrapper() {
@@ -80,6 +81,17 @@ fun NavigationWrapper() {
                     navController.navigate(Login) {
                         popUpTo(Juegos) { inclusive = true }
                     }
+                },
+                onNavigateToUsuarios = {
+                    navController.navigate(Usuarios)
+                }
+            )
+        }
+
+        composable<Usuarios> {
+            UsuariosScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

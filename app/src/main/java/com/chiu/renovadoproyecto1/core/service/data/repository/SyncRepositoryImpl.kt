@@ -22,10 +22,10 @@ class SyncRepositoryImpl(
                     onSuccess = {
                         deleteOfflineJuego(offlineJuego).fold(
                             onSuccess = { successCount++ },
-                            onFailure = { /* Log error but continue */ }
+                            onFailure = { "Error" }
                         )
                     },
-                    onFailure = { /* Log error but continue */ }
+                    onFailure = {"Error"}
                 )
             }
 
@@ -39,9 +39,8 @@ class SyncRepositoryImpl(
         return try {
             Log.d("SyncRepository", "⬆️ Subiendo ${offlineJuego.nombre} a la API")
 
-            // Convertir OfflineJuegoEntity a Juego
             val juego = Juego(
-                id = null, // Será asignado por el servidor
+                id = null,
                 nombre = offlineJuego.nombre,
                 compania = offlineJuego.compania,
                 descripcion = offlineJuego.descripcion,
@@ -50,7 +49,6 @@ class SyncRepositoryImpl(
                 isOffline = false
             )
 
-            // Usar el UseCase existente para subir a la API
             createJuegoUseCase(juego).fold(
                 onSuccess = {
                     Log.d("SyncRepository", "✅ ${offlineJuego.nombre} subido exitosamente")

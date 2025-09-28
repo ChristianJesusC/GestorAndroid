@@ -20,7 +20,7 @@ class SyncOfflineDataUseCaseImpl(
 
     override suspend operator fun invoke(): Result<SyncResult> {
         return try {
-            Log.d("SyncUseCase", "🔄 Iniciando sincronización de datos offline")
+            Log.d("SyncUseCase", "Iniciando sincronización de datos offline")
 
             val offlineJuegos = syncRepository.getAllOfflineJuegos()
 
@@ -41,17 +41,14 @@ class SyncOfflineDataUseCaseImpl(
             var failureCount = 0
             val errors = mutableListOf<String>()
 
-            // Procesar cada juego offline
             offlineJuegos.forEach { offlineJuego ->
                 try {
                     Log.d("SyncUseCase", "⬆️ Subiendo: ${offlineJuego.nombre}")
 
-                    // Subir a la API
                     syncRepository.uploadJuegoToApi(offlineJuego).fold(
                         onSuccess = {
                             Log.d("SyncUseCase", "✅ ${offlineJuego.nombre} subido exitosamente")
 
-                            // Solo eliminar si se subió exitosamente
                             syncRepository.deleteOfflineJuego(offlineJuego).fold(
                                 onSuccess = {
                                     Log.d("SyncUseCase", "🗑️ ${offlineJuego.nombre} eliminado de Room")

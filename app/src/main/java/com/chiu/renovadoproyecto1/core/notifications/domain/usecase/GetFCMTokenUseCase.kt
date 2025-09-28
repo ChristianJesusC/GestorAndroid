@@ -7,14 +7,14 @@ import kotlinx.coroutines.tasks.await
 class GetFCMTokenUseCase {
     suspend operator fun invoke(): Result<String> {
         return try {
-            Log.d("GetFCMTokenUseCase", "🔍 Obteniendo token FCM...")
+            Log.d("GetFCMTokenUseCase", "Obteniendo token FCM...")
 
             val token = FirebaseMessaging.getInstance().token.await()
 
-            Log.d("GetFCMTokenUseCase", "✅ Token FCM obtenido: ${token.take(20)}...")
+            Log.d("GetFCMTokenUseCase", "Token FCM obtenido: ${token.take(20)}...")
             Result.success(token)
         } catch (e: Exception) {
-            Log.e("GetFCMTokenUseCase", "❌ Error obteniendo token FCM: ${e.message}")
+            Log.e("GetFCMTokenUseCase", "Error obteniendo token FCM: ${e.message}")
             Result.failure(e)
         }
     }

@@ -11,13 +11,12 @@ class RegisterTokenUseCase(
 ) {
     suspend operator fun invoke(fcmToken: String, platform: String): Result<String> {
         return try {
-            // Solo registrar si hay sesión activa
             if (!tokenRepository.isTokenValid()) {
-                Log.d("RegisterTokenUseCase", "⚠️ No hay sesión activa, no se registra token FCM")
+                Log.d("RegisterTokenUseCase", "No hay sesión activa, no se registra token FCM")
                 return Result.success("Token guardado localmente para registro posterior")
             }
 
-            Log.d("RegisterTokenUseCase", "📝 Registrando token FCM en servidor...")
+            Log.d("RegisterTokenUseCase", "Registrando token FCM en servidor...")
 
             val notificationToken = NotificationToken(
                 token = fcmToken,
@@ -28,18 +27,17 @@ class RegisterTokenUseCase(
 
             result.fold(
                 onSuccess = { message ->
-                    // Guardar token localmente para futuras referencias
                     notificationRepository.saveToken(fcmToken)
-                    Log.d("RegisterTokenUseCase", "✅ Token registrado: $message")
+                    Log.d("RegisterTokenUseCase", "Token registrado: $message")
                 },
                 onFailure = { error ->
-                    Log.e("RegisterTokenUseCase", "❌ Error registrando token: ${error.message}")
+                    Log.e("RegisterTokenUseCase", "Error registrando token: ${error.message}")
                 }
             )
 
             result
         } catch (e: Exception) {
-            Log.e("RegisterTokenUseCase", "❌ Excepción en RegisterTokenUseCase: ${e.message}")
+            Log.e("RegisterTokenUseCase", "Excepción en RegisterTokenUseCase: ${e.message}")
             Result.failure(e)
         }
     }

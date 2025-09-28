@@ -48,7 +48,6 @@
         private val _offlineJuegosCount = MutableStateFlow(0)
         val offlineJuegosCount: StateFlow<Int> = _offlineJuegosCount.asStateFlow()
 
-        // Estados de red
         private val _networkState = MutableStateFlow<NetworkState>(NetworkState.Unknown)
         val networkState: StateFlow<NetworkState> = _networkState.asStateFlow()
 
@@ -72,11 +71,9 @@
                 if (offlineCount > 0) {
                     Log.d("JuegosViewModel", "🔄 Conexión recuperada, iniciando sincronización automática de $offlineCount juegos")
 
-                    // Mostrar mensaje informativo
                     _state.value = JuegosState.ActionSuccess("Conexión recuperada - Sincronizando $offlineCount juegos...")
 
-                    // Iniciar servicio de sincronización
-                    SyncForegroundService.startSync(context) // Necesitas pasar el context
+                    SyncForegroundService.startSync(context)
 
                 } else {
                     Log.d("JuegosViewModel", "ℹ️ Conexión recuperada, no hay juegos offline para sincronizar")
@@ -101,7 +98,6 @@
 
                     Log.d("JuegosViewModel", "Connection status: $isConnected")
 
-                    // ✅ AGREGAR: Auto-sincronizar cuando regresa la conexión
                     if (isConnected && wasDisconnected) {
                         checkAndStartAutoSync()
                     }
@@ -122,7 +118,6 @@
                     _offlineJuegosCount.value = count
                     Log.d("JuegosViewModel", "Juegos offline: $count")
 
-                    // Recargar datos cuando cambien los juegos offline
                     loadAllJuegos()
                 }
             }
@@ -131,7 +126,6 @@
         private suspend fun loadAllJuegos() {
             try {
                 val onlineJuegos = if (_connectionStatus.value) {
-                    // Cargar de API si hay conexión
                     getJuegosUseCase().fold(
                         onSuccess = { it },
                         onFailure = {
@@ -157,7 +151,6 @@
                     )
                 }
 
-                // Combinar ambas listas
                 val allJuegos = onlineJuegos + offlineJuegos
 
                 Log.d("JuegosViewModel", "Total juegos: ${allJuegos.size} (Online: ${onlineJuegos.size}, Offline: ${offlineJuegos.size})")

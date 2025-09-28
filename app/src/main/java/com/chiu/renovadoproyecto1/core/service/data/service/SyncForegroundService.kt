@@ -47,9 +47,8 @@ class SyncForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d("SyncService", "🔄 Servicio de sincronización creado")
+        Log.d("SyncService", "Servicio de sincronización creado")
 
-        // Inicializar dependencias
         syncUseCase = ServiceModule.provideSyncOfflineDataUseCase(this)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -68,29 +67,25 @@ class SyncForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startSyncProcess() {
-        Log.d("SyncService", "🚀 Iniciando proceso de sincronización")
+        Log.d("SyncService", "Iniciando proceso de sincronización")
 
-        // Iniciar servicio en primer plano
         startForeground(NOTIFICATION_ID, createSyncingNotification())
 
-        // Cancelar job anterior si existe
         syncJob?.cancel()
 
-        // Iniciar sincronización
         syncJob = CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             try {
                 updateNotification("Preparando sincronización...", 0)
 
                 syncUseCase().fold(
                     onSuccess = { result ->
-                        Log.d("SyncService", "✅ Sincronización completada: $result")
+                        Log.d("SyncService", "Sincronización completada: $result")
 
                         if (result.failureCount > 0) {
                             updateNotification(
                                 "Sincronización completada con errores: ${result.successCount}/${result.totalProcessed}",
                                 100
                             )
-                            // Mantener notificación por 5 segundos para mostrar resultado
                             delay(5000)
                         } else {
                             updateNotification(
@@ -147,7 +142,7 @@ class SyncForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("🔄 GameStore - Sincronizando")
+            .setContentTitle("GameStore - Sincronizando")
             .setContentText("Subiendo juegos offline al servidor...")
             .setSmallIcon(R.drawable.ic_sync)
             .setContentIntent(pendingIntent)
@@ -167,18 +162,15 @@ class SyncForegroundService : Service() {
             .apply {
                 when {
                     progress < 0 -> {
-                        // Error
                         setSmallIcon(R.drawable.ic_error)
-                        setContentTitle("❌ GameStore - Error")
+                        setContentTitle(" GameStore - Error")
                     }
                     progress == 100 -> {
-                        // Completado
                         setSmallIcon(R.drawable.ic_check)
-                        setContentTitle("✅ GameStore - Completado")
+                        setContentTitle("GameStore - Completado")
                         setOngoing(false)
                     }
                     else -> {
-                        // En progreso
                         setProgress(100, progress, progress == 0)
                     }
                 }

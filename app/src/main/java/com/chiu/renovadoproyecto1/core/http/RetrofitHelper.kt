@@ -9,7 +9,7 @@ import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 object RetrofitHelper {
-    private const val BASE_URL = "http://98.86.41.104:3000/"
+    private const val BASE_URL = "http://44.217.8.127:3000/"
     private const val TIMEOUT = 30L
 
     private var retrofit: Retrofit? = null

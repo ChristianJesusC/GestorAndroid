@@ -31,12 +31,15 @@ import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Dialog.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.View.Content.*
 import com.chiu.renovadoproyecto1.features.juegos.presentation.View.components.GameImage
+import com.chiu.renovadoproyecto1.core.security.SecureScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JuegosScreen(
-    onNavigateToLogin: () -> Unit = {}
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToUsuarios: () -> Unit = {}
 ) {
+    SecureScreen {
     val context = LocalContext.current
 
     val viewModel: JuegosViewModel = viewModel(
@@ -63,10 +66,12 @@ fun JuegosScreen(
             is JuegosState.ActionSuccess -> {
                 Toast.makeText(context, currentState.message, Toast.LENGTH_SHORT).show()
             }
+
             is JuegosState.OfflineSaved -> {
                 Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
             }
-            else -> { }
+
+            else -> {}
         }
     }
 
@@ -127,6 +132,22 @@ fun JuegosScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            IconButton(
+                                onClick = onNavigateToUsuarios,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(
+                                        MaterialTheme.colorScheme.secondaryContainer.copy(
+                                            alpha = 0.8f
+                                        )
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Default.People,
+                                    contentDescription = "Ver Usuarios",
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
                             // Botón de estado de red
                             IconButton(
                                 onClick = {
@@ -235,8 +256,10 @@ fun JuegosScreen(
                                     )
                                     val currentState = state
                                     if (currentState is JuegosState.Success) {
-                                        val onlineCount = currentState.juegos.count { !it.isOffline }
-                                        val offlineCount = currentState.juegos.count { it.isOffline }
+                                        val onlineCount =
+                                            currentState.juegos.count { !it.isOffline }
+                                        val offlineCount =
+                                            currentState.juegos.count { it.isOffline }
 
                                         Column {
                                             Text(
@@ -446,6 +469,7 @@ fun JuegosScreen(
             )
         }
     }
+}
 }
 
 @Composable
