@@ -1,4 +1,4 @@
-package com.chiu.renovadoproyecto1.features.juegos.presentation.View
+package com.chiu.renovadoproyecto1.features.juegos.presentation.View.components
 
 import android.graphics.BitmapFactory
 import android.util.Base64

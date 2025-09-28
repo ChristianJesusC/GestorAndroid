@@ -11,10 +11,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import com.chiu.renovadoproyecto1.core.appcontext.AppContextHolder
 import com.chiu.renovadoproyecto1.core.hardware.di.HardwareModule
 import com.chiu.renovadoproyecto1.core.navigation.NavigationWrapper
+import com.chiu.renovadoproyecto1.core.security.ScreenCaptureManager
+import com.chiu.renovadoproyecto1.core.security.SecureScreenManager
 import com.chiu.renovadoproyecto1.ui.theme.RenovadoProyecto1Theme
+import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
 
@@ -37,6 +41,19 @@ class MainActivity : FragmentActivity() {
 
         HardwareModule.setupLaunchers(permissionLauncher, cameraLauncher)
 
+        // ✅ Observar cambios en el modo seguro
+        lifecycleScope.launch {
+            SecureScreenManager.isSecureScreen.collect { isSecure ->
+                if (isSecure) {
+                    ScreenCaptureManager.blockScreenCapture(this@MainActivity)
+                    Log.d("MainActivity", "🔒 Capturas BLOQUEADAS")
+                } else {
+                    ScreenCaptureManager.allowScreenCapture(this@MainActivity)
+                    Log.d("MainActivity", "🔓 Capturas PERMITIDAS")
+                }
+            }
+        }
+
         enableEdgeToEdge()
         setContent {
             RenovadoProyecto1Theme {
@@ -48,5 +65,6 @@ class MainActivity : FragmentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         HardwareModule.clearCameraManager()
+        SecureScreenManager.reset()
     }
 }

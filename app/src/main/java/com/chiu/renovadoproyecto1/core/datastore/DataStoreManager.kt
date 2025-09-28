@@ -31,5 +31,24 @@ class DataStoreManager (private val context: Context){
             preferences.remove(PreferenceKeys.TOKEN)
         }
     }
+    suspend fun saveFCMToken(token: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferenceKeys.FCM_TOKEN] = token
+        }
+    }
 
+    suspend fun getFCMToken(): String? {
+        return try {
+            val token = context.dataStore.data.first()[PreferenceKeys.FCM_TOKEN]
+            if (token.isNullOrEmpty()) null else token
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun clearFCMToken() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PreferenceKeys.FCM_TOKEN)
+        }
+    }
 }

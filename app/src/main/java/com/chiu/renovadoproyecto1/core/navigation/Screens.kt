@@ -10,3 +10,6 @@ object Juegos
 
 @Serializable
 object Register
+
+@Serializable
+object Usuarios

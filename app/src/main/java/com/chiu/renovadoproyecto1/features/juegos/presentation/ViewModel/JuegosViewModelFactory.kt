@@ -1,5 +1,6 @@
 package com.chiu.renovadoproyecto1.features.juegos.presentation.ViewModel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.chiu.renovadoproyecto1.core.hardware.domain.Camera.CapturePhotoUseCase
@@ -23,7 +24,7 @@ class JuegosViewModelFactory(
     private val checkNetworkUseCase: CheckNetworkUseCase,
     private val saveOfflineJuegoUseCase: SaveOfflineJuegoUseCase,
     private val offlineRepository: OfflineRepository,
-
+    private val context: Context
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -37,8 +38,8 @@ class JuegosViewModelFactory(
             capturePhotoUseCase = capturePhotoUseCase,
             checkNetworkUseCase = checkNetworkUseCase,
             saveOfflineJuegoUseCase = saveOfflineJuegoUseCase,
-            offlineRepository = offlineRepository
-
+            offlineRepository = offlineRepository,
+            context = context
         ) as T
     }
 }
